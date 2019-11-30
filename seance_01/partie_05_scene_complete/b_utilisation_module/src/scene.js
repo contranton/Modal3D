@@ -51,7 +51,7 @@ function init3DObjects(sceneGraph) {
     cylinder.name = "cylinder";
     elementsToAdd.push(cylinder);
 
-
+    
 
     for( const k in elementsToAdd ) {
         const element = elementsToAdd[k];
@@ -59,6 +59,11 @@ function init3DObjects(sceneGraph) {
         element.receiveShadow = true;
         sceneGraph.add(element);
     }
+
+    const cylinder2Geometry = primitive.Cylinder( Vector3(0,-0.5,0), Vector3(0,0.5,0),0.15 );
+    const cylinder2 = new THREE.Mesh( cylinder2Geometry,MaterialRGB(0.1,0.9,0.1) );
+    cylinder2.name = "cylinder2";
+    cylinder.add(cylinder2);
 
 
 }
@@ -80,6 +85,10 @@ function animate(sceneThreeJs, time) {
     cylinder.setRotationFromAxisAngle(Vector3(0,0,1),Math.PI*t); // rotation de l'objet
     cylinder.position.set(0,1.5,2); // placement de l'objet à sa position dans l'espace
 
+    const cylinder2 = sceneThreeJs.sceneGraph.getObjectByName("cylinder2");
+    cylinder2.position.set(0,0,0);
+    cylinder2.setRotationFromAxisAngle(Vector3(0,0,1),3*Math.PI*t);
+    cylinder2.position.set(0,1,0.25);
 
     render(sceneThreeJs);
 }

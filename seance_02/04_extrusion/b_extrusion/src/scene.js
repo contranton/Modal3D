@@ -41,7 +41,8 @@ function init3DObjects(sceneGraph,pickableObjects) {
 
 
     // Création d'une forme extrudée
-    const extrudeSettings = { amount: epaisseur, bevelEnabled:false };
+    const extrudeSettings = { amount: epaisseur, bevelEnabled:true,
+                              bevelSize:-0.1, bevelThickness:0.01 };
     const extrudeGeometry = new THREE.ExtrudeBufferGeometry( curveShape, extrudeSettings );
     const extrudeObject = new THREE.Mesh( extrudeGeometry, MaterialRGB(0.9,0.9,0.9) ) ;
     sceneGraph.add( extrudeObject );

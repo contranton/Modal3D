@@ -26,6 +26,7 @@ function init3DObjects(sceneGraph,pickableObjects) {
     vectorPoints.push( Vector2(0.8, 0.15) );
     vectorPoints.push( Vector2(0.8, 0.25) );
     vectorPoints.push( Vector2(0.65, 0.35) );
+    vectorPoints.push( Vector2(0.4, 0.2) );
     vectorPoints.push( Vector2(0, 0.35) );
 
     // Création d'une forme triangulée

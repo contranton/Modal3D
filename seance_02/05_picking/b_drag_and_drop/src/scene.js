@@ -55,7 +55,7 @@ function main() {
     document.addEventListener( 'mouseup', wrapperMouseUp );
 
     // Fonction à appeler lors du déplacement de la souris: translation de l'objet selectionné
-    const wrapperMouseMove = function(event) { onMouseMove(event, pickingData, screenSize, sceneThreeJs.camera) };
+    const wrapperMouseMove = function(event) { onMouseMove(event, pickingData, screenSize, sceneThreeJs.camera); };
     document.addEventListener( 'mousemove', wrapperMouseMove );
 
     // Fonction de rappels pour le clavier: activation/désactivation du picking par CTRL
@@ -183,6 +183,11 @@ function onMouseUp(event,pickingData) {
     pickingData.enableDragAndDrop = false;
 }
 
+function inBox(point){
+    return (point.x >= 0 && point.y >= 0 && point.z >= 0 &&
+            point.x <= 1 && point.y <= 1 && point.z <= 1);
+}
+
 function onMouseMove( event, pickingData, screenSize, camera ) {
 
 	// Gestion du drag & drop
@@ -205,19 +210,30 @@ function onMouseMove( event, pickingData, screenSize, camera ) {
 
         // Intersection entre le rayon 3D et le plan de la camera
         const p = pickingData.selectedPlane.p;
-        const n = pickingData.selectedPlane.n;
+        const n = pickingData.selectedPlane.n.subScalar(0.25/2);
         // tI = <p-p0,n> / <d,n>
         const tI = ( (p.clone().sub(p0)).dot(n) ) / ( d.dot(n) );
         // pI = p0 + tI d
         const pI = (d.clone().multiplyScalar(tI)).add(p0); // le point d'intersection
 
+
         // Translation à appliquer
         const translation = pI.clone().sub( p );
 
+        const obj = pickingData.selectedObject;
         // Translation de l'objet et de la représentation visuelle
-        pickingData.selectedObject.translateX( translation.x );
-        pickingData.selectedObject.translateY( translation.y );
-        pickingData.selectedObject.translateZ( translation.z );
+        obj.translateX( translation.x );
+        obj.translateY( translation.y );
+        obj.translateZ( translation.z );
+
+        // If Translation depasses box, undo it
+        let verts = [...obj.geometry.vertices.map(p=>p.clone())];
+        verts.map(p=>p.add(obj.position));
+        if(verts.some(p=>!inBox(p))){
+            obj.translateX( -translation.x );
+            obj.translateY( -translation.y );
+            obj.translateZ( -translation.z );
+        }
 
         pickingData.selectedPlane.p.add( translation );
 

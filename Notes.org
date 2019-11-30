@@ -1,0 +1,5 @@
+
+* À retenir
+- Faut lancer un serveur si on veut charger ou saufguarder des fichiers
+ - python -m http.server -> localhost:8000
+- dat.GUI add function takes an /object/ whose /properties/ (passed as their name)we change

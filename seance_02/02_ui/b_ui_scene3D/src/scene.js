@@ -1,7 +1,7 @@
 "use strict";
 
 
-main();
+let scene = main();
 
 function main() {
 
@@ -15,7 +15,9 @@ function main() {
     // Les paramètres de l'interface graphique
     const guiParam = {
         primitiveType: "cube", // Le nom de la primitive à afficher
-        x:0, y:0, z:0 // La translation à appliquer sur la primitive
+        x:0, y:0, z:0, // La translation à appliquer sur la primitive
+        plane_y:0,
+        cube_color:"#FF0000"
     };
 
 
@@ -26,6 +28,8 @@ function main() {
     updatedGui(guiParam, sceneThreeJs); //Initialisation de la visualisation en cohérence avec l'interface
 
     AnimationLoop(sceneThreeJs,guiParam);
+
+    return sceneThreeJs;
 }
 
 
@@ -37,6 +41,9 @@ function updatedGui(guiParam,sceneThreeJs) {
     // Récupération de la primitive à afficher
     const sphere = sceneThreeJs.sceneGraph.getObjectByName("sphere");
     const cube = sceneThreeJs.sceneGraph.getObjectByName("cube");
+
+    // CHangement de couleur
+    cube.material.color = new THREE.Color(guiParam.cube_color);
 
     let visibleShape = null;
     if( guiParam.primitiveType==="cube" ) {
@@ -54,6 +61,11 @@ function updatedGui(guiParam,sceneThreeJs) {
     const translation = Vector3(guiParam.x/10, guiParam.y/10, guiParam.z/10);
     const p = p0.clone().add(translation);
     visibleShape.position.copy(p);
+
+    // Changement du plane
+    const ground = sceneThreeJs.sceneGraph.getObjectByName("ground");
+    ground.position.set(0, guiParam.plane_y, 0);
+
 
 }
 
@@ -87,6 +99,8 @@ function initGui(guiParam,sceneThreeJs) {
     gui.add( guiParam,"y", 0,6 ).onChange(updateFunc);
     gui.add( guiParam,"z",-5,5 ).onChange(updateFunc);
 
+    gui.add( guiParam, "plane_y", -2, 2).onChange(updateFunc);
+    gui.addColor(guiParam, "cube_color").onChange(updateFunc);
 
 }
 

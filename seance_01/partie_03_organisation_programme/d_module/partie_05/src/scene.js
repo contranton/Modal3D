@@ -1,7 +1,7 @@
 "use strict";
 
 
-main();
+let scene = main();
 
 function main() {
 
@@ -14,6 +14,8 @@ function main() {
     initEmptyScene(sceneThreeJs);
     init3DObjects(sceneThreeJs.sceneGraph);
     render(sceneThreeJs);
+
+    return sceneThreeJs;
 }
 
 // Initialise les objets composant la scène 3D
@@ -41,7 +43,8 @@ function initEmptyScene(sceneThreeJs) {
     sceneThreeJs.sceneGraph = new THREE.Scene();
 
     sceneThreeJs.camera = sceneInit.createCamera(-5,5,5);
-    sceneInit.insertLight(sceneThreeJs.sceneGraph);
+    sceneInit.insertLight(sceneThreeJs.sceneGraph,
+                          -5, 8, 0, 0xffffff);
 
     sceneThreeJs.renderer = sceneInit.createRenderer();
     sceneInit.insertRenderInHtml(sceneThreeJs.renderer.domElement);

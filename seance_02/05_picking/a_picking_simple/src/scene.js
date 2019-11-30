@@ -58,6 +58,13 @@ function init3DObjects() {
     sceneGraph.add(cube);
     pickingData.selectableObjects.push(cube); // Ajout du cube en tant qu'élément selectionnable
 
+    // Un autre
+    const cube2 = new THREE.Mesh(cubeGeometry, MaterialRGB(1, 1, 1));
+    cube2.name="cube2";
+    cube2.castShadow = true;
+    cube2.position.add(Vector3(0, 0.2, 0.2));
+    sceneGraph.add(cube2);
+    pickingData.selectableObjects.push(cube2);
 
     // *********************** //
     /// Une sphère montrant la position selectionnée
@@ -99,7 +106,7 @@ function onKeyUp(event) {
     if ( ctrlPressed===false ) {
         pickingData.enabled = false;
         sceneThreeJs.controls.enabled = true;
-        pickingData.selectedObject = null;
+        //pickingData.selectedObject = null;
     }
 
 }
@@ -108,8 +115,13 @@ function onKeyUp(event) {
 
 function onMouseDown(event) {
 
-	// Gestion du picking
+	  // Gestion du picking
     if( pickingData.enabled===true ) { // activation si la touche CTRL est enfoncée
+
+        if(pickingData.selectedObject != null){
+            onDeselectObject(pickingData.selectedObject);
+        }
+
 
         // Coordonnées du clic de souris
         const xPixel = event.clientX;
@@ -153,9 +165,23 @@ function onMouseDown(event) {
             planeSelection.position.copy( pickingData.selectedPlane.p );
             planeSelection.visible = true;
 
+            // Appel de callback de la selection
+            onSelectObject(pickingData.selectedObject);
+
+        }else{
+            pickingData.selectedObject = null;
         }
     }
+    console.log(pickingData);
 
+}
+
+function onSelectObject(object){
+    object.material.color = new THREE.Color(1, 0, 0);
+}
+
+function onDeselectObject(object){
+    object.material.color = new THREE.Color(1,1,1);
 }
 
 

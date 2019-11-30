@@ -44,16 +44,16 @@ function initEmptyScene() {
     sceneGraph = new THREE.Scene();
 
     camera = createCamera(-5, 5, 5);
-    insertLight();
+    insertLight(-5, 8, 8, 0xff00ff);
 
     renderer = createRenderer();
     insertRenderInHtml();
 }
 
 // Création et ajout de lumière dans le graphe de scène
-function insertLight() {
-    const spotLight = new THREE.SpotLight(0xffffff);
-    spotLight.position.set(-5,8,0);
+function insertLight(x, y, z, col) {
+    const spotLight = new THREE.SpotLight(col);
+    spotLight.position.set(x, y, z);
     sceneGraph.add(spotLight);
 }
 

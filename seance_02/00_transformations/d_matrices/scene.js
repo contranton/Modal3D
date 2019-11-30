@@ -74,13 +74,17 @@ function animate(sceneThreeJs, time) {
     const cylinderSon = sceneThreeJs.sceneGraph.getObjectByName("cylinderSon");
 
     // Transformation du cylindre vert
-    const Tinv_green = new THREE.Matrix4().makeTranslation(-1,-1,-1);
-    const R_green = new THREE.Matrix4().makeRotationAxis(new Vector3(1,0,0), 0.01);
-    const T_green = new THREE.Matrix4().makeTranslation( 1, 1, 1);
 
-    const M_green = new THREE.Matrix4().multiply(T_green).multiply(R_green).multiply(Tinv_green);
+    cylinder.applyMatrix(
+        function(){
+            const Tinv_green = new THREE.Matrix4().makeTranslation(-1,-1,-1);
+            const R_green = new THREE.Matrix4().makeRotationAxis(new Vector3(1,0,0), 0.01);
+            const T_green = new THREE.Matrix4().makeTranslation( 1, 1, 1);
 
-    cylinder.applyMatrix(M_green);
+            const M_green = new THREE.Matrix4().multiply(T_green).multiply(R_green).multiply(Tinv_green);
+            return M_green;
+        }()
+    );
 
 
     // Transformation du cylindre rouge

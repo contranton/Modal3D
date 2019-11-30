@@ -60,9 +60,10 @@ window.addEventListener('resize',onResize);
 // ****************************** //
 //  Rendu
 // ****************************** //
-
+let movement_vector = new THREE.Vector3(0, 0, 0);
 
 function render() {
+    object.position.add(movement_vector);
     renderer.render(sceneGraph, camera);
 }
 
@@ -71,7 +72,7 @@ render();
 
 
 
-
+let pressed = false;
 // Fonction appelée lors du clic de la souris
 function onMouseDown(event) {
     console.log('Mouse down');
@@ -82,13 +83,14 @@ function onMouseDown(event) {
 
     // Conversion des coordonnées pixel en coordonnées relatives par rapport à la fenêtre (ici par rapport au canvas de rendu).
     // Les coordonnées sont comprises entre -1 et 1
-    const x = 2*(xPixel/canvasSize)-1;
-    const y = 1-2*(yPixel/canvasSize);
+    const x = 2*(xPixel/canvasSize)-1 - object.position.x;
+    const y = 1-2*(yPixel/canvasSize) - object.position.y;
 
 
     // Recherche si le clic est à l'intérieur ou non de la sphère
     if ( x*x+y*y < radius*radius ) {
 
+        pressed = true;
         object.material.color.set(0xff0000);
 
     }
@@ -101,27 +103,87 @@ function onMouseDown(event) {
 // Fonction appelée lors du relachement de la souris
 function onMouseUp(event) {
     console.log('Mouse up');
+    console.log(event.x, event.y);
+    console.log(object.position.x, object.position.y);
+    pressed = false;
 
     object.material.color.set(0xaaffff);
     render();
 }
 
 // Fonction appelée lors du déplacement de la souris
-function onMouseMove(event) {
 
+const sc_ratio = canvasSize;
+function onMouseMove(event) {
+    if(event.buttons === 1 && pressed){ // Left click
+        object.position.add(new THREE.Vector3(event.movementX/sc_ratio,
+                                              -event.movementY/sc_ratio,
+                                             0));
+    }
+    render();
 }
 
+let key_pressed = {
+    "ArrowDown": false,
+    "ArrowRight": false,
+    "ArrowLeft": false,
+    "ArrowUp": false
+};
+
+const dx = 0.05;
 // Fonction appelée lors de l'appuis sur une touche du clavier
 function onKeyDown(event) {
 
     const keyCode = event.code;
     console.log("Touche ",keyCode," enfoncé");
+
+    if(!key_pressed[keyCode]){
+        switch(keyCode){
+        case "ArrowDown":
+            movement_vector.add(new THREE.Vector3(0, -dx, 0));
+            break;
+        case "ArrowRight":
+            movement_vector.add(new THREE.Vector3(dx, 0, 0));
+            break;
+        case "ArrowLeft":
+            movement_vector.add(new THREE.Vector3(-dx, 0, 0));
+            break;
+        case "ArrowUp":
+            movement_vector.add(new THREE.Vector3(0, dx, 0));
+            break;
+        }
+        key_pressed[keyCode] = true;
+    }
+
+    render();
 }
 
 // Fonction appelée lors du relachement d'une touche du clavier
 function onKeyUp(event) {
-	const keyCode = event.code;
-	console.log("Touche ",keyCode," relaché");
+	  const keyCode = event.code;
+	  console.log("Touche ",keyCode," relaché");
+
+
+    if(key_pressed[keyCode]){
+        switch(keyCode){
+        case "ArrowDown":
+            movement_vector.add(new THREE.Vector3(0, dx, 0));
+            break;
+        case "ArrowRight":
+            movement_vector.add(new THREE.Vector3(-dx, 0, 0));
+            break;
+        case "ArrowLeft":
+            movement_vector.add(new THREE.Vector3(dx, 0, 0));
+            break;
+        case "ArrowUp":
+            movement_vector.add(new THREE.Vector3(0, -dx, 0));
+            break;
+        }
+
+        key_pressed[keyCode] = false;
+    }
+
+    render();
 }
 
 // Fonction appelée lors du redimmensionnement de la fenetre
