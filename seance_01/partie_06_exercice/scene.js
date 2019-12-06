@@ -12,13 +12,57 @@ function main() {
         controls: null
     };
 
+    const guiParams = {
+        n_levels: 3,
+        n_branches: 3,
+        phi: 0,
+        motion: 0.001,
+        regen: false,
+    };
+
     initEmptyScene(sceneThreeJs);
     init3DObjects(sceneThreeJs.sceneGraph);
+    initGui(guiParams, sceneThreeJs);
 
-
-    animationLoop(sceneThreeJs);
+    animationLoop(sceneThreeJs, guiParams);
 
     return sceneThreeJs;
+}
+
+function update(guiParams, sceneThreeJs){
+    const graph = sceneThreeJs.sceneGraph;
+    const tree = graph.getObjectByName("tree_base");
+
+    if (guiParams.regen){
+        graph.remove(tree);
+        const tree = generateTree(Vector3(0, 0, 0),
+                                  guiParams.n_branches,
+                                  guiParams.phi,
+                                  guiParams.n_levels,
+                                  guiParams.motion);
+        graph.add(tree);
+        guiParams.regen = false;
+    }
+
+    tree.traverse(function(obj){
+        if(obj.name=="leaf"){return;}
+        const i = obj.userData.index;
+        obj.rotateOnAxis(Vector3(0, 1, 0), 2*Math.PI*i/guiParams.n_branches);
+        obj.rotateX(guiParams.phi);
+    });
+
+
+}
+
+
+function initGui(guiParams, sceneThreeJs){
+    const gui = new dat.GUI();
+
+    const callback = function(val){return function(){guiParams.regen=val;update(guiParams, sceneThreeJs);};};
+
+    gui.add(guiParams, "n_levels", 1, 10).onChange(callback(true));
+    gui.add(guiParams, "n_branches", 1, 6).onChange(callback(true));
+    gui.add(guiParams, "phi", 0, Math.PI).onChange(callback(false));
 }
 
 // Initialise les objets composant la scène 3D
@@ -52,8 +96,6 @@ function init3DObjects(sceneGraph) {
     // const cylinder2 = new THREE.Mesh( cylinder2Geometry,MaterialRGB(0.1,0.9,0.1) );
     // cylinder2.name = "cylinder2";
     // cylinder.add(cylinder2);
-
-
 }
 
 // Demande le rendu de la scène 3D
@@ -61,19 +103,20 @@ function render( sceneThreeJs ) {
     sceneThreeJs.renderer.render(sceneThreeJs.sceneGraph, sceneThreeJs.camera);
 }
 
-function animate(sceneThreeJs, time) {
+function animate(sceneThreeJs, guiParams, time) {
 
     const t = time/1000;//time in second
+    const A = guiParams.motion;
 
-    const base = sceneThreeJs.sceneGraph.getObjectByName("base");
+    const base = sceneThreeJs.sceneGraph.getObjectByName("tree_base");
     // Branch rotations
     base.traverse(function(obj){
         if(obj.name == "leaf"){return;}
         let d = obj.userData.depth;
         if(d == null){ d = 0;}
-        obj.rotation.x += 0.001*Math.cos(0.01*time)*d**3;
-        obj.rotation.y -= 0.001*Math.sin(0.01*time)*d**3;
-        obj.rotation.z += 0.001*Math.sin(time);
+        obj.rotation.x += A*Math.cos(0.01*time)*d**3;
+        obj.rotation.y -= A*Math.sin(0.01*time)*d**3;
+        obj.rotation.z += A*Math.sin(time);
     });
 
 
@@ -104,15 +147,15 @@ function initEmptyScene(sceneThreeJs) {
 }
 
 // Fonction de gestion d'animation
-function animationLoop(sceneThreeJs) {
+function animationLoop(sceneThreeJs, guiParams) {
 
     // Fonction JavaScript de demande d'image courante à afficher
     requestAnimationFrame(
 
         // La fonction (dite de callback) recoit en paramètre le temps courant
         function(timeStamp){
-            animate(sceneThreeJs,timeStamp); // appel de notre fonction d'animation
-            animationLoop(sceneThreeJs); // relance une nouvelle demande de mise à jour
+            animate(sceneThreeJs, guiParams, timeStamp); // appel de notre fonction d'animation
+            animationLoop(sceneThreeJs, guiParams); // relance une nouvelle demande de mise à jour
         }
 
      );
@@ -153,7 +196,7 @@ function generateTree(base_pos, n_branches, motion){
 
     // Main trunk
     const base = new THREE.Mesh(cylGeom, brown);
-    base.name = "base";
+    base.name = "tree_base";
     base.position.set(base_pos.x, base_pos.y, base_pos.z);
     const base_link = new THREE.Mesh(sphGeom, brown);
     base_link.position.add(Vector3(0,branch_height,0));
@@ -195,6 +238,7 @@ function generateTree(base_pos, n_branches, motion){
                 // Scale branches
                 branch.scale.set(scaling, scaling, scaling);
 
+
                 branch.rotateOnAxis(Vector3(0, 1, 0), 2*Math.PI*i/Z);
                 branch.rotateX(0.6);
 
@@ -207,8 +251,9 @@ function generateTree(base_pos, n_branches, motion){
                 branch.position.add(Vector3(0, branch_height+radius/2, 0));
 
 
-                // Assign individual animation functions
-                branch.userData = {depth: k};
+                // Assign branch data (depth, radial index) 
+                branch.userData = {depth: k,
+                                   index: i};
 
                 // Assign branches and update lists
                 new_branches.push(branch);

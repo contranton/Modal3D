@@ -220,7 +220,7 @@ function onMouseMove( event, pickingData, screenSize, camera ) {
         // Translation à appliquer
         const translation = pI.clone().sub( p );
 
-        const obj = pickingData.selectedObject;
+        const obj = pickingData.selec}tedObject;
         // Translation de l'objet et de la représentation visuelle
         obj.translateX( translation.x );
         obj.translateY( translation.y );
