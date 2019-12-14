@@ -99,7 +99,7 @@ const primitive = (function() {
 
         Triangle: function(p0,p1,p2) {
 
-            const n = new THREE.Triangle(p0,p1,p2).normal();
+            const n = new THREE.Triangle(p0,p1,p2).getNormal();
             const vertices = new Float32Array([
                 p0.x,p0.y,p0.z,
                 p1.x,p1.y,p1.z,
@@ -123,8 +123,10 @@ const primitive = (function() {
 
 
         Quadrangle: function(p0,p1,p2,p3) {
-            const n1 = new THREE.Triangle(p0,p1,p2).normal();
-            const n2 = new THREE.Triangle(p0,p2,p3).normal();
+            var n1 = new THREE.Vector3();
+            new THREE.Triangle(p0,p1,p2).getNormal(n1);
+            var n2 =  new THREE.Vector3();
+            new THREE.Triangle(p0,p2,p3).getNormal(n2);
             const vertices = new Float32Array([
                 p0.x,p0.y,p0.z,
                 p1.x,p1.y,p1.z,
@@ -154,9 +156,9 @@ const primitive = (function() {
             ]);
 
             const geometry = new THREE.BufferGeometry();
-            geometry.addAttribute('position',new THREE.BufferAttribute(vertices,3));
-            geometry.addAttribute('normal',new THREE.BufferAttribute(normal,3));
-            geometry.addAttribute('uv',new THREE.BufferAttribute(uv,2));
+            geometry.setAttribute('position',new THREE.BufferAttribute(vertices,3));
+            geometry.setAttribute('normal',new THREE.BufferAttribute(normal,3));
+            geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
 
             return geometry;
         }

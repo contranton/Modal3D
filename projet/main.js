@@ -1,2 +1,2 @@
-var scene = new Scene();
-var modeler = new Modeler(scene);
+const scene = new Scene();
+const modeler = new Modeler(scene);

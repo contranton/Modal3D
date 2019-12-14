@@ -10,7 +10,8 @@ function onKeyDown(event) {
     // Relachement de ctrl : activation du mode picking
     if (ctrlPressed) {
         this.picker.enabled = true;
-        this.controls.enabled = false;
+        this.p_controls.enabled = false;
+        this.o_controls.enabled = false;
     }
 
 }
@@ -23,7 +24,8 @@ function onKeyUp(event) {
     if (ctrlPressed === false) {
         this.picker.enabled = false;
         this.picker.enableDragAndDrop = false;
-        this.controls.enabled = true;
+        this.p_controls.enabled = true;
+        this.o_controls.enabled = true;
         this.picker.selectedObject = null;
         this.picker.visualRepresentation.sphereSelection.visible = false;
         this.picker.visualRepresentation.sphereTranslation.visible = false;
@@ -40,8 +42,8 @@ function onMouseDown(event) {
         const xPixel = event.clientX;
         const yPixel = event.clientY;
 
-        const x = 2 * xPixel / this.screenSize.w - 1;
-        const y = -2 * yPixel / this.screenSize.h + 1;
+        const x = 2 * xPixel / this.w - 1;
+        const y = -2 * yPixel / this.h + 1;
 
         // Calcul d'un rayon passant par le point (x,y)
         //  c.a.d la direction formé par les points p de l'espace tels que leurs projections sur l'écran par la caméra courante soit (x,y).
@@ -85,8 +87,8 @@ function onMouseMove(event) {
         const xPixel = event.clientX;
         const yPixel = event.clientY;
 
-        const x = 2 * xPixel / this.screenSize.w - 1;
-        const y = -2 * yPixel / this.screenSize.h + 1;
+        const x = 2 * xPixel / this.w - 1;
+        const y = -2 * yPixel / this.h + 1;
 
         // Projection inverse passant du point 2D sur l'écran à un point 3D
         const selectedPoint = Vector3(x, y, 0.5 /*valeur de z après projection*/);
