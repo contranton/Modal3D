@@ -235,7 +235,7 @@ class DrawController {
                 points = points.map(x => new THREE.Vector2(x[1], x[2])).slice(0, this.i_points/3);
                 break;
             case "top":
-                points = points.map(x => new THREE.Vector2(x[0], x[1])).slice(0, this.i_points/3);
+                points = points.map(x => new THREE.Vector2(x[0], x[2])).slice(0, this.i_points/3);
                 break;
             // Deal with arbitrary geometry here. Project onto the minimum base plane?
         }

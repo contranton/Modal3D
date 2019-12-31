@@ -61,31 +61,46 @@ class proc_MakeBody{
         const prf = this.scene.sceneGraph.getObjectByName("YZ").drawing;
         const top = this.scene.sceneGraph.getObjectByName("ZX").drawing;
 
+        const depth = 2;
+
         const opts = {
             steps: 2,
-            depth: 16,
-            bevelEnabled: true,
-            bevelThickness: 1,
-            bevelSize: 1,
-            bevelOffset: 0,
-            bevelSegments: 1
+            depth: depth,
+            bevelEnabled: false
         };
 
         const prf_geom = new THREE.ExtrudeGeometry(prf, opts);
         const top_geom = new THREE.ExtrudeGeometry(top, opts);
 
-        const prf_obj = new THREE.Mesh(prf_geom, MaterialRGB(1, 0, 0));
-        const top_obj = new THREE.Mesh(top_geom, MaterialRGB(0, 1, 1));
+        const prf_obj = new THREE.Mesh(prf_geom, MaterialRGB(1, 0, 0, 0.2));
+        const top_obj = new THREE.Mesh(top_geom, MaterialRGB(0, 1, 0, 0.2));
+        // const prf_wire = new THREE.WireframeHelper(prf_obj, 0x0000ff);
+        // const top_wire = new THREE.WireframeHelper(top_obj, 0x0000ff); 
+
+        prf_obj.translateX(-depth/2);
+        top_obj.translateY(depth/2);
+        // prf_wire.translateX(-depth/2);
+        // top_wire.translateY(depth/2);
 
         prf_obj.rotateY(Math.PI/2);
+        top_obj.rotateX(Math.PI/2);
+        // prf_wire.rotateY(Math.PI/2);
+        // top_wire.rotateX(Math.PI/2);
 
-        this.scene.sceneGraph.add(prf_obj);
-        this.scene.sceneGraph.add(top_obj);
+        //this.scene.sceneGraph.add(prf_obj);
+        //this.scene.sceneGraph.add(top_obj);     
+        // this.scene.sceneGraph.add(prf_wire);
+        // this.scene.sceneGraph.add(top_wire);
 
-        // Generate CSG geometry for each extruded plane
+        // Generate CSG geometry for each extruded plane and intersect them
 
-        console.log("Generating GEOM")
-        // Calculate their intersection
+        //const inter_geom = new ThreeBSP(prf_geom).intersect(new ThreeBSP(top_geom)).toGeometry();
+        const inter = threecsg.intersect(prf_obj, top_obj, MaterialRGB(0, 0, 1));
+        inter.name = "Body";
+        const inter_wire = new THREE.WireframeHelper(inter, 0x000000);
+
+        this.scene.sceneGraph.add(inter);
+        this.scene.sceneGraph.add(inter_wire);
 
         // Smooth the result using mean-curvature-flow
     }
