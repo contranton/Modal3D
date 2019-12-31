@@ -3,26 +3,70 @@ body {
 	margin: 0px;
 }
 
-.btn-group button{
-	background-color: lightgrey;
-	/* border: 3px solid lightslategray; */
-	color: black;
-	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-	font-size: large;
-	font-weight: bold;
-	border-radius: 20px;
-	padding: 20px 24px;
-	cursor: pointer;
-	display: block;
-	margin: 20px auto;
-}
-
-.btn-group button:hover{
-	background-color: darkgray;
-}
-
-.btn-group{
+.group-left{
 	position: absolute;
 	top: 220px;
 	align-content: center;
+	display:flex;
+	flex-direction: column;
+}
+
+.group-left button{
+	padding: 20px 24px;
+	margin: 20px auto;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-size: large;
+	font-weight: bold;
+}
+
+.btn-group button{
+	
+	background-color: lightgrey;
+	/* border: 3px solid lightslategray; */
+	color: black;
+	border-radius: 20px;
+	cursor: pointer;
+	display: block;
+	
+}
+
+.btn-group button:hover button:enabled{
+	background-color: darkgray;
+}
+
+.btn-group button:disabled{
+	opacity: 25%;
+}
+
+
+.with-icon{
+	all: initial;
+	padding: 40px;
+}
+
+.with-icon img{
+	margin: 20px;
+}
+
+.hidden{
+	display:none;
+}
+
+/*Green color*/
+#play{
+	filter: invert(41%) sepia(100%) saturate(916%) hue-rotate(86deg) brightness(94%) contrast(89%);
+}
+
+
+/*Red color*/
+#pause{
+	filter: invert(13%) sepia(98%) saturate(4381%) hue-rotate(24deg) brightness(86%) contrast(119%);
+}
+
+.play-pause img{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	max-width: 20%;
+	max-height: 20%;
 }

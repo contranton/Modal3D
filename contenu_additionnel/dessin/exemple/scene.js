@@ -51,11 +51,22 @@ function init3DObjects(camera,sceneGraph, drawingData) {
   const planeGeometry = primitive.Quadrangle(new THREE.Vector3(-100,-50,0),new THREE.Vector3(-100,50,0),new THREE.Vector3(100,50,0),new THREE.Vector3(100,-50,0));
   const materialGround = new THREE.MeshLambertMaterial({ color: 0xC0C0C0, side: THREE.DoubleSide });
   const plane = new THREE.Mesh(planeGeometry,materialGround);
-  plane.name="plane";
-  plane.receiveShadow = true;
-  drawingData.drawingObjects.push(plane);
-  sceneGraph.add(plane);
+  const plane2 = new THREE.Mesh(planeGeometry, materialGround);
+  plane2.position.add(new THREE.Vector3(2, 20, 15));
 
+  plane.name="plane";
+  plane2.name = "plane";
+  plane.receiveShadow = true;
+  plane2.receiveShadow = true;
+  drawingData.drawingObjects.push(plane);
+  drawingData.drawingObjects.push(plane2);
+  sceneGraph.add(plane);
+  sceneGraph.add(plane2);
+
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(10, 64, 64), materialGround);
+  sphere.position.add(new THREE.Vector3(-20, 0,  50))
+  drawingData.drawingObjects.push(sphere);
+  sceneGraph.add(sphere);
 }
 
 function initEmptyScene(sceneThreeJs, affichageElement) {
@@ -64,6 +75,7 @@ function initEmptyScene(sceneThreeJs, affichageElement) {
   sceneThreeJs.sceneGraph.background = new THREE.Color(0xB0E0E6);
 
   sceneThreeJs.camera = sceneInit.createCamera(0.47,0.68,138)
+  sceneThreeJs.camera.position.add(new THREE.Vector3(-50,100,50));
   sceneInit.insertAmbientLight(sceneThreeJs.sceneGraph);
   const spotLight1 = sceneInit.insertLight(sceneThreeJs.sceneGraph,sceneThreeJs.camera.position);
   spotLight1.name = "spotLight1";

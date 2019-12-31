@@ -15,19 +15,15 @@ const utilsDrawing = (function() {
         // Sauvegarde des données du drawing
         if (down){
           drawingData.selectedObject = intersection.object; // objet selectionné
-        } else {
-          if (intersection.object != drawingData.selectedObject){
+        } else if (intersection.object != drawingData.selectedObject){
             return;
-          } else {
-            let intersection = intersects[0];
-          }
+
         }
         drawingData.drawing3DPoints.push(intersection.point.clone());
 
         if (down == false && drawingData.line.is_ob){
-          scene.remove(drawingData.line);
+          //scene.remove(drawingData.line);
         }
-
         const lineGeometry = new THREE.Geometry();
         lineGeometry.vertices = drawingData.drawing3DPoints;
         const lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
