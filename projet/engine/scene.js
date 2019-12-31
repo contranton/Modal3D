@@ -20,17 +20,33 @@ class Scene {
 
         this.view_locked = false; // Prevents navigation
 
-        this.renderer = null;
+        
+        // Navigation
         this.controls = null;
-
+        
         // Dynamic content controllers
         this.picker = new PickController(this);
         this.drawer = new DrawController(this);
+        
+        // Rendering and materials
+        this.renderer = null;
+        this.background_on = false;
 
+        
         // Initialize Scene
         this.initEmptyScene();
-        this.init3DObjects();
+        this.materials =  {"METAL": new THREE.MeshStandardMaterial({
+                                            color: 0xAAFFAA,
+                                            envMap: this.textureCube,
+                                            roughness: 0.5,
+                                            emissive: 0,
+                                            metalness: 0
+                                        })
+                        }
 
+        // Insert some objects
+        this.init3DObjects();
+        
         // Raycaster for picking and drawing
         this.raycaster = new THREE.Raycaster();
 
@@ -92,7 +108,7 @@ class Scene {
             path + "front.jpg", path + "back.jpg"
         ];
         this.textureCube = new THREE.CubeTextureLoader().load(urls);
-        this.sceneGraph.background = this.textureCube;
+        //this.sceneGraph.background = this.textureCube;
 
 
         // Renderer
@@ -119,7 +135,7 @@ class Scene {
         /// Un objet selectionnable
         // *********************** //
         const cubeGeometry = primitive.Sphere(Vector3(0.5, 0.125, 0.5), 0.25);
-        const cube = new THREE.Mesh(cubeGeometry, MaterialGlossy("#FFFFAA", this.textureCube));
+        const cube = new THREE.Mesh(cubeGeometry, this.materials.METAL);
         cube.name = "cube";
         cube.castShadow = true;
         this.sceneGraph.add(cube);

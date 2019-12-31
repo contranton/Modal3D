@@ -6,13 +6,11 @@ MENUS:
 - Toggle background on/off
 
 DRAWING:
-- REstart drawing if beginnning to draw again
 - Show "view completed" status on menu buttons.
     - Only when profile and top are good does "generate" enable
 
 MESH:
-- Boolean Intersection + Remesh (how?) + Vertex smoothing
-    - Implement your own vertex smoothing?
+- Vertex smoothing
 - Keep seams intact
     - Seams are where the shape extrusinos intersect
 - Simulate soft body expansion?

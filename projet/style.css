@@ -38,10 +38,28 @@ body {
 	opacity: 25%;
 }
 
+.group-top{
+	display: flex;
+	justify-content: space-evenly;
+	position: absolute;
+	top: 0;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: flex-start;
+	width: 100%;
+}
 
-.with-icon{
-	all: initial;
-	padding: 40px;
+.group-top button{
+	position: relative;
+	max-width: 20%;
+	display: block;
+	background: none;
+	border: none;
+	font-size: 0;
+}
+
+.group-top button:hover{
+	filter: drop-shadow(2px 4px 6px black);
 }
 
 .with-icon img{
@@ -63,10 +81,7 @@ body {
 	filter: invert(13%) sepia(98%) saturate(4381%) hue-rotate(24deg) brightness(86%) contrast(119%);
 }
 
-.play-pause img{
-	position: absolute;
-	top: 0px;
-	left: 0px;
-	max-width: 20%;
-	max-height: 20%;
+img{
+	width: 80px;
+	height: 80px;
 }

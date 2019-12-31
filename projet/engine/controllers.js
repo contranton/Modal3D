@@ -108,11 +108,9 @@ class DrawController {
 
         // Raycasted object
         this.selected_obj = null;
-        this.current_points = [];
 
         this.i_points = 0;
         this.MAX_POINTS = 256;
-        this.__new_line()
 
         // Final mesh
         this.generated_shape = null
@@ -132,7 +130,13 @@ class DrawController {
 
         // Line Object
         const line_mat = new THREE.LineBasicMaterial({ color: 0x000000 });
-        this.current_line = new THREE.Line(line_geom, line_mat);
+        return new THREE.Line(line_geom, line_mat);
+    }
+
+    clear_current_line(object){
+        this.i_points = 0;
+        this.MAX_POINTS = 256;
+        object.current_line.geometry.attributes.position.array.map(()=>0);
     }
 
     draw_point(screen_x, screen_y, clicked=false, rem=false) {
@@ -152,26 +156,20 @@ class DrawController {
             let intersection = intersects[0];
 
             // Draw only on the first object touched by the mouse
-            if (clicked) {
-                this.selected_obj = intersection.object;
-            } else if(intersection.object != this.selected_obj) {
-                return;
-            }
+            // if (clicked) {
+            //     this.selected_obj = intersection.object;
+            // } else if(intersection.object != this.selected_obj) {
+            //     return;
+            // }
+            this.selected_obj = intersection.object;
+            let line = this.selected_obj.current_line;
 
-            // Clear previous drawings
-            if(rem){
-                var to_rem = true;
-                while(to_rem){
-                    to_rem = this.selected_obj.getObjectByProperty('finished', true);     
-                    this.selected_obj.remove(to_rem);
-                }
+            if(line.finished){
+                this.clear_current_line(this.selected_obj);
             }
-
 
             // Update geometry
-
-
-            let position = this.current_line.geometry.attributes.position;
+            let position = line.geometry.attributes.position;
             const p = intersection.point.clone();
             // Add new point
             position.array[this.i_points++] = p.x;
@@ -189,19 +187,19 @@ class DrawController {
                 console.log("Rebuilding")
                 this.MAX_POINTS *= 2;
                 let new_geom = new THREE.BufferGeometry();
-                let old_geom = this.current_line.geometry;
+                let old_geom = line.geometry;
                 let positions = new Float32Array(this.MAX_POINTS * 3);
                 new_geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
                 new_geom.attributes.position.array.set(old_geom.attributes.position.array);
-                this.current_line.geometry = new_geom;
+                line.geometry = new_geom;
             }
 
-            this.current_line.geometry.setDrawRange(0, this.i_points-1);
-            this.current_line.geometry.computeBoundingSphere();
+            line.geometry.setDrawRange(0, this.i_points-1);
+            line.geometry.computeBoundingSphere();
 
-            this.current_line.finished = false; 
-            this.current_line.is_ob = true;
+            line.finished = false; 
+            line.is_ob = true;
  
         }
     }
@@ -212,23 +210,25 @@ class DrawController {
         Manages geometry creation.
         */
 
+        let line = this.selected_obj.current_line;
 
         // Map line to the object (?)
         this.selected_obj.updateMatrix();
         const matrice = this.selected_obj.matrix;
         matrice.getInverse(matrice);
-        this.current_line.applyMatrix(matrice);
+        line.applyMatrix(matrice);
+
 
         // Re-add drawn lines
-        this.current_line.finished = true;
-        //this.selected_obj.remove(this.current_line);
-        this.selected_obj.add(this.current_line.clone());
+        line.finished = true;
+        //this.selected_obj.remove(line);
+        //this.selected_obj.add(line.clone());
         
         // Generate triangulation and add to scene
         // TODO: ConvexGeometry or ShapeGeometry? How to ensure we can later get shapes conformed to other objects?
 
         // Flatten 3D drawing to 2D planes
-        let points = foldm(this.current_line.geometry.attributes.position.array, 3);
+        let points = foldm(line.geometry.attributes.position.array, 3);
 
         switch(this.view){
             case "profile":
@@ -245,13 +245,16 @@ class DrawController {
         drawn_shape.autoClose = true;
         drawn_shape.name = name;
         this.selected_obj.drawing = drawn_shape;
-        
-        // Clear point buffer
-        this.current_points = [];
 
         // Call any callbacks
         let callback = this.callbacks[this.selected_obj];
         if(callback){callback();}
+    }
+
+    clear_obj(object){
+        let old_line = object.getObjectByProperty('finished', true);
+        object.remove(old_line);
+        delete(object.drawing);
     }
 
     draw_on(object, callback=None){
@@ -262,8 +265,13 @@ class DrawController {
         this.drawable_objs.push(object);
         this.callbacks[object] = callback;
 
-        this.__new_line();
-        this.scene.sceneGraph.add(this.current_line);
+        if(object.current_line === undefined){
+            object.current_line = this.__new_line();
+            object.add(object.current_line);
+        }else{
+            this.clear_current_line(object);
+        }
+        
     }
 
     clear_drawables(){

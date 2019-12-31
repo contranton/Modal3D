@@ -18,7 +18,7 @@ insertLight: function(sceneGraph,p) {
     },
 
 insertAmbientLight: function(sceneGraph) {
-    const ambient = new THREE.AmbientLight( 0xffffff, 0.7 );
+    const ambient = new THREE.AmbientLight( 0xffffff, 0.3 );
     sceneGraph.add(ambient);
 },
 

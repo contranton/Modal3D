@@ -34,7 +34,7 @@ class proc_MakeBody{
         s.yz.visible = true;
         s.zx.visible = false;
 
-        s.drawer.draw_on(s.yz, this.update_gen_button.bind(this));
+        s.drawer.draw_on(s.yz, this.update_gen_button.bind(this), true);
         s.drawer.enabled = true;
         s.disable_controls();
     }
@@ -50,7 +50,7 @@ class proc_MakeBody{
         s.yz.visible = false;
         s.zx.visible = true;
 
-        s.drawer.draw_on(s.zx, this.update_gen_button.bind(this));
+        s.drawer.draw_on(s.zx, this.update_gen_button.bind(this), true);
         s.drawer.enabled = true;
         s.disable_controls();
     }
@@ -149,9 +149,13 @@ class Modeler{
         //this.main_buttons.appendChild(new Button("Export .obj", this.menu_Export.bind(this)));
         this.main_menu.appendChild(this.main_buttons);
 
+        this.top_menu = document.createElement("div");
+        this.top_menu.className = "group-top";
+        
+
         // Pause/play animation button
         const button_anim = new Button("Toggle animation", this.toggle_anim.bind(this));
-        button_anim.classList.add("with-icon", "play-pause");
+        button_anim.classList.add("group-top", "with-icon", "play-pause");
         const play_svg  = document.createElement("img")
         play_svg.id = "play";
         play_svg.src= "textures/icons/play.svg";
@@ -161,9 +165,24 @@ class Modeler{
         pause_svg.src= "textures/icons/pause.svg";
         button_anim.appendChild(play_svg);
         button_anim.appendChild(pause_svg);
-        this.div_root.appendChild(button_anim);
+        this.top_menu.appendChild(button_anim);
+
+        // Change Visualization button
+        const button_bg = new Button("Toggle BG", this.toggle_bg.bind(this));
+        button_bg.classList.add("group-top", "with-icon", "bg");
+        const bg_on_png  = document.createElement("img")
+        bg_on_png.id = "bg_on";
+        bg_on_png.src= "textures/icons/bg_on.png";
+        const bg_off_png = document.createElement("img")
+        bg_off_png.id = "bg_off";
+        bg_off_png.src= "textures/icons/bg_off.png";
+        bg_off_png.hidden = true;
+        button_bg.appendChild(bg_on_png);
+        button_bg.appendChild(bg_off_png);
+        this.top_menu.appendChild(button_bg);
 
         this.div_root.appendChild(this.main_menu);
+        this.div_root.appendChild(this.top_menu);
 
     }
 
@@ -218,6 +237,33 @@ class Modeler{
             play_svg.classList.add("hidden");
             pause_svg.classList.remove("hidden");
         }
+    }
+
+    toggle_bg(){
+        console.log("togglin");
+        const bg_on_png = document.getElementById("bg_on");
+        const bg_off_png = document.getElementById("bg_off");
+
+        if(this.scene.background_on){
+            console.log("off")
+            this.scene.materials.METAL.metalness = 0;
+            this.scene.materials.METAL.roughness = 0.5;
+            this.scene.sceneGraph.background = null;
+            this.scene.background_on = false;
+
+            bg_on_png.hidden = false;
+            bg_off_png.hidden = true;
+        }else{
+            console.log("on");
+            this.scene.materials.METAL.metalness = 1;
+            this.scene.materials.METAL.roughness = 0.01;
+            this.scene.sceneGraph.background = this.scene.textureCube;
+            this.scene.background_on = true;
+
+            bg_on_png.hidden = true;
+            bg_off_png.hidden = false;
+        }
+        
     }
 
     menu_MakeBody(){

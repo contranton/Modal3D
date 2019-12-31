@@ -48,7 +48,7 @@ function onMouseDown(event) {
     }
 
     if (this.drawer.enabled === true) {
-        this.drawer.draw_point(x, y, true, false);
+        //this.drawer.draw_point(x, y, true, false);
         this.drawer.drawing = true;
     }
 
