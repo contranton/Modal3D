@@ -1,3 +1,7 @@
+// https://gist.github.com/webinista/11240585#gistcomment-1781756
+// Splits an array r into j-sized subarrays
+const foldm = (r,j) => r.reduce((a,b,i,g) => !(i % j) ? a.concat([g.slice(i,i+j)]) : a, []);
+
 class PickController {
     constructor(scene) {
         this.scene = scene;
@@ -99,15 +103,36 @@ class DrawController {
         this.drawable_objs = [];
         this.callbacks = {};
 
+        // Name of the final mesh
         this.view = "";
 
+        // Raycasted object
         this.selected_obj = null;
         this.current_points = [];
-        this.current_line = null;
 
+        this.i_points = 0;
+        this.MAX_POINTS = 256;
+        this.__new_line()
+
+        // Final mesh
         this.generated_shape = null
 
+        // Is in the process of drawing (i.e. mouse held down)
         this.drawing = false;
+    }
+
+    __new_line(){
+        // BufferGeometry for efficient point addition
+        // Geometry gets rebuilt if maximum point number is surpassed
+        this.i_points = 0;
+        const line_geom = new THREE.BufferGeometry();
+        const positions = new Float32Array(this.MAX_POINTS * 3);
+        line_geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        line_geom.setDrawRange(0, this.i_points);
+
+        // Line Object
+        const line_mat = new THREE.LineBasicMaterial({ color: 0x000000 });
+        this.current_line = new THREE.Line(line_geom, line_mat);
     }
 
     draw_point(screen_x, screen_y, clicked=false, rem=false) {
@@ -128,7 +153,6 @@ class DrawController {
 
             // Draw only on the first object touched by the mouse
             if (clicked) {
-                console.log(intersection.object);
                 this.selected_obj = intersection.object;
             } else if(intersection.object != this.selected_obj) {
                 return;
@@ -143,23 +167,42 @@ class DrawController {
                 }
             }
 
-            // Add the new point
-            this.current_points.push(intersection.point.clone());
 
-            // Remove the previously added line -- not segment! We're redrawing the entire line each time
-            if (clicked == false && this.current_line.is_ob) {
-                this.scene.sceneGraph.remove(this.current_line);
+            // Update geometry
+
+
+            let position = this.current_line.geometry.attributes.position;
+            const p = intersection.point.clone();
+            // Add new point
+            position.array[this.i_points++] = p.x;
+            position.array[this.i_points++] = p.y;
+            position.array[this.i_points++] = p.z;
+            /* // And connect it to the first point
+            position.array[this.i_points+1] = position.array[0];
+            position.array[this.i_points+2] = position.array[1];
+            position.array[this.i_points+3] = position.array[2]; */
+
+            position.needsUpdate = true;
+
+            // Rebuild geometry if not enough points
+            if(this.i_points >= this.MAX_POINTS*3){
+                console.log("Rebuilding")
+                this.MAX_POINTS *= 2;
+                let new_geom = new THREE.BufferGeometry();
+                let old_geom = this.current_line.geometry;
+                let positions = new Float32Array(this.MAX_POINTS * 3);
+                new_geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                new_geom.attributes.position.array.set(old_geom.attributes.position.array);
+                this.current_line.geometry = new_geom;
             }
 
-            // Connect the dots!
-            const lineGeometry = new THREE.Geometry();
-            lineGeometry.vertices = this.current_points;
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-            this.current_line = new THREE.Line(lineGeometry, lineMaterial);
-            console.log(this.current_line.geometry.vertices.length)
-            this.current_line.finished = false;
+            this.current_line.geometry.setDrawRange(0, this.i_points-1);
+            this.current_line.geometry.computeBoundingSphere();
+
+            this.current_line.finished = false; 
             this.current_line.is_ob = true;
-            this.scene.sceneGraph.add(this.current_line);
+ 
         }
     }
 
@@ -169,10 +212,6 @@ class DrawController {
         Manages geometry creation.
         */
 
-        if (this.current_points.length == 0) {return;}
-
-        // Close the shape
-        this.current_points.push(this.current_points[0]);
 
         // Map line to the object (?)
         this.selected_obj.updateMatrix();
@@ -182,31 +221,30 @@ class DrawController {
 
         // Re-add drawn lines
         this.current_line.finished = true;
-        this.scene.sceneGraph.remove(this.current_line);
-        this.selected_obj.add(this.current_line);
+        //this.selected_obj.remove(this.current_line);
+        this.selected_obj.add(this.current_line.clone());
         
         // Generate triangulation and add to scene
         // TODO: ConvexGeometry or ShapeGeometry? How to ensure we can later get shapes conformed to other objects?
 
         // Flatten 3D drawing to 2D planes
-        let points = [];
-        if(this.view == "profile"){
-            points = this.current_points.map(x => new THREE.Vector2(x[1], x[2]));
-        }else if (this.view == "top"){
-            points = this.current_points.map(x => new THREE.Vector2(x[0], x[1]));
+        let points = foldm(this.current_line.geometry.attributes.position.array, 3);
+
+        switch(this.view){
+            case "profile":
+                points = points.map(x => new THREE.Vector2(x[1], x[2])).slice(0, this.i_points/3);
+                break;
+            case "top":
+                points = points.map(x => new THREE.Vector2(x[0], x[1])).slice(0, this.i_points/3);
+                break;
+            // Deal with arbitrary geometry here. Project onto the minimum base plane?
         }
 
-        // Generate geometry
-        const drawn_geom = new THREE.ShapeGeometry(new THREE.Shape(points));
-        const drawn_shape = new THREE.Mesh(drawn_geom, MaterialRGB(1, 0, 0));
+        // Assign drawing to object
+        const drawn_shape = new THREE.Shape(points);
+        drawn_shape.autoClose = true;
         drawn_shape.name = name;
-
-        // Add to scene
-        if(this.generated_shape !== null){
-            this.scene.sceneGraph.remove(this.generated_shape);
-        }
-        this.generated_shape = drawn_shape;
-        this.scene.sceneGraph.add(this.generated_shape);
+        this.selected_obj.drawing = drawn_shape;
         
         // Clear point buffer
         this.current_points = [];
@@ -223,6 +261,9 @@ class DrawController {
         the object is done */
         this.drawable_objs.push(object);
         this.callbacks[object] = callback;
+
+        this.__new_line();
+        this.scene.sceneGraph.add(this.current_line);
     }
 
     clear_drawables(){

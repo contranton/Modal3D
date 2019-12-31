@@ -15,10 +15,10 @@ class proc_MakeBody{
 
     update_gen_button(){
         console.log("HI :3")
-        const side = this.scene.sceneGraph.getObjectByName("YZ").getObjectByProperty('finished', true)
-        const top = this.scene.sceneGraph.getObjectByName("ZX").getObjectByProperty('finished', true)
+        const side = this.scene.sceneGraph.getObjectByName("YZ").drawing;
+        const top = this.scene.sceneGraph.getObjectByName("ZX").drawing;
 
-        if(!(side === null && top === null)){
+        if(side !== null && top !== null){
             document.getElementById("gen").disabled = false;
         }
     }
@@ -56,6 +56,32 @@ class proc_MakeBody{
     }
 
     generate(){
+
+        // Extrude each plane
+        const prf = this.scene.sceneGraph.getObjectByName("YZ").drawing;
+        const top = this.scene.sceneGraph.getObjectByName("ZX").drawing;
+
+        const opts = {
+            steps: 2,
+            depth: 16,
+            bevelEnabled: true,
+            bevelThickness: 1,
+            bevelSize: 1,
+            bevelOffset: 0,
+            bevelSegments: 1
+        };
+
+        const prf_geom = new THREE.ExtrudeGeometry(prf, opts);
+        const top_geom = new THREE.ExtrudeGeometry(top, opts);
+
+        const prf_obj = new THREE.Mesh(prf_geom, MaterialRGB(1, 0, 0));
+        const top_obj = new THREE.Mesh(top_geom, MaterialRGB(0, 1, 1));
+
+        prf_obj.rotateY(Math.PI/2);
+
+        this.scene.sceneGraph.add(prf_obj);
+        this.scene.sceneGraph.add(top_obj);
+
         // Generate CSG geometry for each extruded plane
 
         console.log("Generating GEOM")
@@ -68,6 +94,7 @@ class proc_MakeBody{
         this.scene.yz.visible = false;
         this.scene.zx.visible = false;
         this.scene.drawer.view = "";
+        this.scene.drawer.enabled = false;
 
         this.scene.enable_controls();
         this.scene.perspective_camera();

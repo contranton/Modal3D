@@ -57,9 +57,10 @@ function onMouseDown(event) {
 function onMouseUp(event) {
     this.picker.enableDragAndDrop = false;
 
-    this.drawer.drawing = false;
-    this.drawer.finish_drawing(this.drawer.view);
-
+    if(this.drawer.enabled){
+        this.drawer.drawing = false;
+        this.drawer.finish_drawing(this.drawer.view);
+    }
 }
 
 function onMouseMove(event) {
