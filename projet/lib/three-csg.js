@@ -147,6 +147,7 @@
             return triangles;
         }
         buildFrom(triangles) {
+            if(triangles.length == 0) return; // TODO: Remove
             if (this.divider === undefined) {
                 const bestDivider = chooseDividingTriangle(triangles);
                 if (bestDivider === undefined) {

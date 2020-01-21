@@ -17,3 +17,15 @@ MESH:
     - Force radiated from median line
     - Getting waaaaay too complicataed
 - I'm using remeshing in the blender workflow... how to do differently or simpler?
+
+MODELING:
+- Prevent person from remaking body unless they wish to restart from scratch
+- Add the projections of the existing drawings onto the other plane (modeler:25)
+
+IMPORTANT:
+- Replace buttons by gestures
+- Variety in the animation?
+- EXPRESSIVE
+- Pense a la animation
+
+USE MORPHTARGETS

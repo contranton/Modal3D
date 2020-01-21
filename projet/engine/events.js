@@ -48,6 +48,7 @@ function onMouseDown(event) {
     }
 
     if (this.drawer.enabled === true) {
+        this.disable_controls();
         //this.drawer.draw_point(x, y, true, false);
         this.drawer.drawing = true;
     }
@@ -58,11 +59,13 @@ function onMouseUp(event) {
     this.picker.enableDragAndDrop = false;
 
     if(this.drawer.enabled){
+        this.enable_controls();
         this.drawer.drawing = false;
         this.drawer.finish_drawing(this.drawer.view);
     }
 }
 
+var tick = 0;
 function onMouseMove(event) {
 
     const xPixel = event.clientX;
@@ -77,8 +80,9 @@ function onMouseMove(event) {
     }
 
     // Drawing
-    if (this.drawer.drawing) {
+    if (this.drawer.drawing && tick==0) {
         this.drawer.draw_point(x, y, false, true);
     }
+    tick = (tick+1) % 5;
 
 }

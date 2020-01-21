@@ -133,12 +133,6 @@ class DrawController {
         return new THREE.Line(line_geom, line_mat);
     }
 
-    clear_current_line(object){
-        this.i_points = 0;
-        this.MAX_POINTS = 256;
-        object.current_line.geometry.attributes.position.array.map(()=>0);
-    }
-
     draw_point(screen_x, screen_y, clicked=false, rem=false) {
         const raycaster = this.scene.raycaster;
         const camera = this.scene.active_camera;
@@ -164,14 +158,26 @@ class DrawController {
             this.selected_obj = intersection.object;
             let line = this.selected_obj.current_line;
 
-            if(line.finished){
-                this.clear_current_line(this.selected_obj);
-            }
+            // if(line.finished){
+            //     this.clear_current_line(this.selected_obj);
+            // }
 
+            // Get new point
+            let p = intersection.point.clone();
+            // If symmetry enabled, prevent depassing symmetry plane
+            if(this.symmetry !== null){
+                var s = this.symmetry;
+                for(var i = 0; i < 3; i++){
+                    if(s[i] < 0 && p.toArray()[i] < 0){
+                        var pp = p.toArray();
+                        pp[i] = 0;
+                        p = new THREE.Vector3(pp[0], pp[1], pp[2]);
+                    }
+                }
+            }
+            
             // Update geometry
             let position = line.geometry.attributes.position;
-            const p = intersection.point.clone();
-            // Add new point
             position.array[this.i_points++] = p.x;
             position.array[this.i_points++] = p.y;
             position.array[this.i_points++] = p.z;
@@ -211,7 +217,6 @@ class DrawController {
         */
 
         let line = this.selected_obj.current_line;
-
         // Map line to the object (?)
         this.selected_obj.updateMatrix();
         const matrice = this.selected_obj.matrix;
@@ -228,14 +233,30 @@ class DrawController {
         // TODO: ConvexGeometry or ShapeGeometry? How to ensure we can later get shapes conformed to other objects?
 
         // Flatten 3D drawing to 2D planes
-        let points = foldm(line.geometry.attributes.position.array, 3);
+        let points = foldm(line.geometry.attributes.position.array.slice(0, this.i_points), 3);
 
-        switch(this.view){
-            case "profile":
-                points = points.map(x => new THREE.Vector2(x[1], x[2])).slice(0, this.i_points/3);
+         // Manage symmetry
+        if(this.symmetry !== null){
+            var s = this.symmetry;
+
+            // Traverse points from the most recently added backwards
+            for(var i = points.length - 1; i >= 0 ; i--){
+                var p = points[i];
+                // Flip them according to the symmetry vector
+                var pp = new Float32Array([s[0]*p[0], s[1]*p[1], s[2]*p[2]]);
+                points.push(pp);
+            }
+        }
+
+        switch(this.flat_coord){
+            case "x":
+                points = points.map(x => new THREE.Vector2(x[1], x[2])).slice(0, this.i_points);
                 break;
-            case "top":
-                points = points.map(x => new THREE.Vector2(x[0], x[2])).slice(0, this.i_points/3);
+            case "y":
+                points = points.map(x => new THREE.Vector2(x[0], x[2])).slice(0, this.i_points);
+                break;
+            case "z":
+                points = points.map(x => new THREE.Vector2(x[0], x[1])).slice(0, this.i_points);
                 break;
             // Deal with arbitrary geometry here. Project onto the minimum base plane?
         }
@@ -257,20 +278,25 @@ class DrawController {
         delete(object.drawing);
     }
 
-    draw_on(object, callback=None){
+    flatten_along(coord){
+        this.flat_coord = coord;
+    }
+
+    draw_on(object, callback=null, symmetry=null){
         /* Makes object drawable
 
         Can accept a callback function which will be called when the drawing on
         the object is done */
+        self.flat_coord = null;
+
         this.drawable_objs.push(object);
         this.callbacks[object] = callback;
+        this.symmetry = symmetry
 
-        if(object.current_line === undefined){
-            object.current_line = this.__new_line();
-            object.add(object.current_line);
-        }else{
-            this.clear_current_line(object);
-        }
+        this.clear_obj(object);
+
+        object.current_line = this.__new_line();
+        object.add(object.current_line);
         
     }
 

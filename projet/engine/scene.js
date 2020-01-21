@@ -2,10 +2,14 @@
 
 class Scene {
 
-    constructor(picker) {
+    constructor() {
 
         // Main scene graph -- contains all objects
         this.sceneGraph = null;
+
+        // Ship elements
+        this.body = null;
+        this.ship_elements = [];
 
         // Reference Planes
 
@@ -36,11 +40,12 @@ class Scene {
         // Initialize Scene
         this.initEmptyScene();
         this.materials =  {"METAL": new THREE.MeshStandardMaterial({
-                                            color: 0xAAFFAA,
+                                            color: 0xAA00AA,
                                             envMap: this.textureCube,
-                                            roughness: 0.5,
+                                            roughness: 0.8,
                                             emissive: 0,
-                                            metalness: 0
+                                            metalness: 0,
+                                            flatShading: false
                                         })
                         }
 
@@ -95,8 +100,9 @@ class Scene {
 
 
         // Lights
-        sceneInit.insertAmbientLight(this.sceneGraph);
-        sceneInit.insertLight(this.sceneGraph, Vector3(4, 8, 4));
+        sceneInit.insertAmbientLight(this.sceneGraph, 0.5);
+        sceneInit.insertSpotLight(this.sceneGraph, Vector3(4, 8, 4));
+        sceneInit.insertPointLight(this.sceneGraph, Vector3(0, -4, 0), 0xffffff, 0.9);
         //sceneInit.insertLight(this.sceneGraph, Vector3(3, 2, -2));
 
 
@@ -138,7 +144,7 @@ class Scene {
         const cube = new THREE.Mesh(cubeGeometry, this.materials.METAL);
         cube.name = "cube";
         cube.castShadow = true;
-        this.sceneGraph.add(cube);
+        //this.sceneGraph.add(cube);
         this.picker.selectableObjects.push(cube); // Ajout du cube en tant qu'élément selectionnable
 
 
@@ -148,7 +154,7 @@ class Scene {
         const sphereSelection = new THREE.Mesh(primitive.Sphere(Vector3(0, 0, 0), 0.015), MaterialRGB(1, 0, 0));
         sphereSelection.name = "sphereSelection";
         sphereSelection.visible = false;
-        this.sceneGraph.add(sphereSelection);
+        //this.sceneGraph.add(sphereSelection);
         this.picker.visualRepresentation.sphereSelection = sphereSelection;
 
         // *********************** //
@@ -157,7 +163,7 @@ class Scene {
         const sphereTranslation = new THREE.Mesh(primitive.Sphere(Vector3(0, 0, 0), 0.015), MaterialRGB(0, 1, 0));
         sphereTranslation.name = "sphereTranslation";
         sphereTranslation.visible = false;
-        this.sceneGraph.add(sphereTranslation);
+        //this.sceneGraph.add(sphereTranslation);
         this.picker.visualRepresentation.sphereTranslation = sphereTranslation;
 
         //const planeGeometry = primitive.Quadrangle()
@@ -174,7 +180,6 @@ class Scene {
 
     perspective_camera() {
         this.active_camera = this.persp_camera;
-        this.sceneGraph.background = this.textureCube;
     }
 
     copy_locrot(origin, target) {
@@ -224,10 +229,12 @@ class Scene {
         this.persp_camera.aspect = this.w / this.h;
         this.persp_camera.updateProjectionMatrix();
 
-        this.ortho_camera.left = -this.w / 2;
-        this.ortho_camera.right = this.w / 2;
-        this.ortho_camera.top = this.h / 2;
-        this.ortho_camera.bottom = -this.h / 2;
+        var w = 2;
+        var h = w/ this.persp_camera.aspect;
+        this.ortho_camera.left = -w / 2;
+        this.ortho_camera.right = w / 2;
+        this.ortho_camera.top = h / 2;
+        this.ortho_camera.bottom = -h / 2;
         this.ortho_camera.updateProjectionMatrix();
 
         this.renderer.setSize(this.w, this.h);
@@ -297,9 +304,11 @@ function initFrameXYZ(sceneGraph) {
     axeY.receiveShadow = true;
     axeZ.receiveShadow = true;
 
-    sceneGraph.add(axeX);
-    sceneGraph.add(axeY);
-    sceneGraph.add(axeZ);
+    if(DEBUG){
+        sceneGraph.add(axeX);
+        sceneGraph.add(axeY);
+        sceneGraph.add(axeZ);
+    }
 
     // Sphère en (0,0,0)
     const rSphere = 0.05;

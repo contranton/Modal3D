@@ -1,11 +1,25 @@
 
 body { 
 	margin: 0px;
+	touch-action: none;
+}
+
+h1 {
+	position: absolute;
+	top: 25%;
+	text-align: center;
+	margin: 0 20%;
+	font-family: "Century Gothic";
+	font-style: oblique;
+	color: white;
+	filter: drop-shadow(2px 2px 3px black);
+	user-select: none;
 }
 
 .group-left{
 	position: absolute;
 	top: 220px;
+	left: 10px;
 	align-content: center;
 	display:flex;
 	flex-direction: column;
@@ -70,16 +84,6 @@ body {
 	display:none;
 }
 
-/*Green color*/
-#play{
-	filter: invert(41%) sepia(100%) saturate(916%) hue-rotate(86deg) brightness(94%) contrast(89%);
-}
-
-
-/*Red color*/
-#pause{
-	filter: invert(13%) sepia(98%) saturate(4381%) hue-rotate(24deg) brightness(86%) contrast(119%);
-}
 
 img{
 	width: 80px;

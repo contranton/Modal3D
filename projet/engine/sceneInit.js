@@ -6,7 +6,7 @@ const sceneInit = (function() {
 return {
 
     // Création et ajout de lumière dans le graphe de scène
-insertLight: function(sceneGraph,p) {
+insertSpotLight: function(sceneGraph,p) {
         const spotLight = new THREE.SpotLight(0xffffff,0.9);
         spotLight.position.copy(p);
 
@@ -17,8 +17,15 @@ insertLight: function(sceneGraph,p) {
         sceneGraph.add(spotLight);
     },
 
-insertAmbientLight: function(sceneGraph) {
-    const ambient = new THREE.AmbientLight( 0xffffff, 0.3 );
+insertPointLight: function(sceneGraph, p, col, intensity) {
+    const spotLight = new THREE.PointLight(col, intensity);
+    spotLight.position.copy(p);
+
+    sceneGraph.add(spotLight);
+},
+
+insertAmbientLight: function(sceneGraph, intensity) {
+    const ambient = new THREE.AmbientLight( 0xffffff, intensity );
     sceneGraph.add(ambient);
 },
 

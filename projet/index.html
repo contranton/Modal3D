@@ -13,18 +13,19 @@
 		<script src="lib/dat.gui.min.js" defer></script>
 		<script src="lib/three-csg.js" defer></script>
 		<script src="lib/OrbitControls.js" defer></script>
-		<!-- <script src="lib/geometry-processing-js/corner.js"></script>
-		<script src="lib/geometry-processing-js/discrete-exterior-calculus.js"></script>
-		<script src="lib/geometry-processing-js/edge.js"></script>
-		<script src="lib/geometry-processing-js/face.js"></script>
-		<script src="lib/geometry-processing-js/geometry.js"></script>
-		<script src="lib/geometry-processing-js/halfedge.js"></script>
-		<script src="lib/geometry-processing-js/mesh-subset.js"></script>
-		<script src="lib/geometry-processing-js/mesh.js"></script>
-		<script src="lib/geometry-processing-js/vertex.js"></script> -->
-	
+		<script src="lib/MeshSurfaceSampler.js" defer></script>
+
+		<script src="lib/three-extensions/SubdivisionModifier.js" defer></script>
+		<script src="lib/three-extensions/SimplifyModifier.js" defer></script>
+		<script src="lib/three-extensions/MaterialHandler.js" defer></script>
+		<script src="lib/three-extensions/MeshReceiver.js" defer></script>
+		<script src="lib/three-extensions/OBJLoader2Parser.js" defer></script>
+		<script src="lib/three-extensions/OBJLoader2.js" defer></script>
+		<script src="lib/three-extensions/OBJLoader.js" defer></script>
+		<script src="lib/three-extensions/OBJExporter.js" defer></script>
+
 		<!-- Graphics Engine -->
-		<script src="engine/primitive.js"></script>
+		<script src="engine/primitive.js" defer></script>
 		<script src="engine/events.js" defer></script>
 		<script src="engine/sceneInit.js" defer></script>
 		<script src="engine/scene.js" defer></script>
@@ -37,7 +38,10 @@
 	</head>
 
 	<body style="overflow: hidden">
-		<div id="AffichageScene3D"> </div>
+		<!-- Main WebGL canvas -->
+		<div id="AffichageScene3D"></div>
+
+		<!-- <h1>Dessinez le profil de votre vaisseau</h1> -->
 	</body>
 
 </html>
