@@ -397,14 +397,14 @@ class Modeler{
             var g = primitive.Cube(target_pos, 1);
             g.scale(scale*Math.random(), scale*Math.random(), scale/5);
             var m = new THREE.Mesh(g, this.scene.materials.METAL);
-            m.lookAt(target_normal);
+            m.lookAt(target_normal.multiplyScalar(-1));
             m.position.copy(target_pos);
             this.scene.sceneGraph.add(m);
         }
     }
 
     menu_Export(){
-
+        
     }
 
 }

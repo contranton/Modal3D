@@ -40,7 +40,7 @@ class Scene {
         // Initialize Scene
         this.initEmptyScene();
         this.materials =  {"METAL": new THREE.MeshStandardMaterial({
-                                            color: 0xAA00AA,
+                                            color: 0xAABABA,
                                             envMap: this.textureCube,
                                             roughness: 0.8,
                                             emissive: 0,
@@ -114,6 +114,7 @@ class Scene {
             path + "front.jpg", path + "back.jpg"
         ];
         this.textureCube = new THREE.CubeTextureLoader().load(urls);
+        this.textureCube.rotation = Math.Pi;
         //this.sceneGraph.background = this.textureCube;
 
 
