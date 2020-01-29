@@ -42,11 +42,12 @@ createCamera: function(x,y,z) {
 createRenderer : function(){
         const renderer = new THREE.WebGLRenderer({antialias:true} );
         renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setClearColor(0xffffff,1.0);
+        renderer.setClearColor(0xaaaaaa,1.0);
         renderer.setSize( window.innerWidth, window.innerHeight );
 
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.Type = THREE.PCFSoftShadowMap;
+        
 
         return renderer;
     },

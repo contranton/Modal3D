@@ -11,6 +11,10 @@ class Scene {
         this.body = null;
         this.ship_elements = [];
 
+        // Boid instances for animation (created by Modeler.js)
+        this.boids = []
+        this.boid_centroid = Vector3();
+
         // Reference Planes
 
         this.xy = null;
@@ -40,13 +44,15 @@ class Scene {
         // Initialize Scene
         this.initEmptyScene();
         this.materials =  {"METAL": new THREE.MeshStandardMaterial({
-                                            color: 0xAABABA,
-                                            envMap: this.textureCube,
-                                            roughness: 0.8,
-                                            emissive: 0,
-                                            metalness: 0,
-                                            flatShading: false
-                                        })
+                                            color: 0xA48A8A,
+                                            roughness: 0.9,
+                                            metalness: 1,
+                                            flatShading: false,
+                                            envMap: this.textureCube
+                                        }),
+                            "DIFFUSE": new THREE.MeshLambertMaterial({
+                                color: 0xa4ba8a
+                            })
                         }
 
         // Insert some objects
@@ -100,18 +106,30 @@ class Scene {
 
 
         // Lights
-        sceneInit.insertAmbientLight(this.sceneGraph, 0.5);
-        sceneInit.insertSpotLight(this.sceneGraph, Vector3(4, 8, 4));
-        sceneInit.insertPointLight(this.sceneGraph, Vector3(0, -4, 0), 0xffffff, 0.9);
-        //sceneInit.insertLight(this.sceneGraph, Vector3(3, 2, -2));
+        sceneInit.insertAmbientLight(this.sceneGraph, 0.4);
+        var sun1 = new THREE.SpotLight(0xffffff, 1);
+        sun1.position.set(500, 0, 0);
+        sun1.lookAt(0, 0, 0);
+        this.sceneGraph.add(sun1);
+
+        var earth = new THREE.SpotLight(0x4499ee, 0.3);
+        sun1.position.set(0, 0, 500);
+        sun1.lookAt(0, 0, 0);
+        this.sceneGraph.add(earth);
+
+        this.sun = new THREE.DirectionalLight(0xdedede, 0.3); // 0.7
+        this.sceneGraph.add(this.sun);
+        // sceneInit.insertSpotLight(this.sceneGraph, Vector3(4, 8, 4));
+        // sceneInit.insertPointLight(this.sceneGraph, Vector3(0, -4, 0), 0xffffff, 0.9);
+        // //sceneInit.insertLight(this.sceneGraph, Vector3(3, 2, -2));
 
 
         // Environment map for reflective materials
-        const path = "textures/skybox/";
+        const path = "textures/skybox/earth00600";
         const urls = [
-            path + "right.jpg", path + "left.jpg",
-            path + "top.jpg", path + "bottom.jpg",
-            path + "front.jpg", path + "back.jpg"
+            path + "1.png", path + "3.png",
+            path + "5.png", path + "4.png",
+            path + "0.png", path + "2.png"
         ];
         this.textureCube = new THREE.CubeTextureLoader().load(urls);
         this.textureCube.rotation = Math.Pi;
@@ -207,8 +225,30 @@ class Scene {
 
     animate(time) {
         const t = time / 1000;//time in second
+        for(var b of this.boids){
+            b.run(this.boids);
+            this.get_boids_centroids();
+            var bb = this.boids[0]
+            this.change_perspective(Vector3(-1, 0.5, -2).applyMatrix4(bb.object.matrix),
+                                    Vector3(0, 0, 1).applyMatrix4(bb.object.matrix)
+                                    .addScaledVector(bb.velocity, 0.1)
+                                    .addScaledVector(this.boid_centroid, 0.01));
+
+            if(Math.random() < 0.02){
+                // Shoot lasers!
+            }
+        }
         this.render();
     }
+
+    get_boids_centroids(){
+        this.boid_centroid.multiplyScalar(0);
+        for(var b of this.boids){
+            this.boid_centroid.add(b.position);
+        }
+        this.boid_centroid.multiplyScalar(1/this.boids.length);
+    }
+
 
     animationLoop() {
         requestAnimationFrame(
@@ -305,18 +345,20 @@ function initFrameXYZ(sceneGraph) {
     axeY.receiveShadow = true;
     axeZ.receiveShadow = true;
 
-    if(DEBUG){
-        sceneGraph.add(axeX);
-        sceneGraph.add(axeY);
-        sceneGraph.add(axeZ);
-    }
+    
 
     // Sphère en (0,0,0)
     const rSphere = 0.05;
     const sphereGeometry = primitive.Sphere(Vector3(0, 0, 0), rSphere);
     const sphere = new THREE.Mesh(sphereGeometry, MaterialRGB(1, 1, 1));
     sphere.receiveShadow = true;
-    sceneGraph.add(sphere);
+
+    if(false){
+        sceneGraph.add(axeX);
+        sceneGraph.add(axeY);
+        sceneGraph.add(axeZ);
+        sceneGraph.add(sphere);
+    }
 }
 
 function get_referential_planes(){

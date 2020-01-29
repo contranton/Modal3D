@@ -8,7 +8,7 @@ Remember to always bind this when passing as a callback argument!
 
 // These classes must implement on_return
 class proc_MakeBody{
-    constructor(scene){
+    constructor(scene, after){
         /**@type {Scene} */
         this.scene = scene;
         if(this.scene.body !== null){
@@ -16,6 +16,7 @@ class proc_MakeBody{
             this.scene.body = null;
         }
 
+        this.after = after;
         this.profile();
     }
 
@@ -42,13 +43,15 @@ class proc_MakeBody{
         s.yz.visible = true;
         s.zx.visible = false;
 
-        s.drawer.draw_on(s.yz, this.update_gen_button.bind(this));
+        s.drawer.draw_on(s.yz, this.top.bind(this));
         s.drawer.flatten_along("x");
         s.drawer.enabled = true;
         s.disable_controls();
     }
 
     top(){
+        document.getElementById("txt").innerText = "Dessinez la vue du haut";
+
         let s = this.scene;
         s.drawer.clear_drawables();
         s.drawer.view = "top";
@@ -61,14 +64,15 @@ class proc_MakeBody{
 
         s.drawer.draw_on(
             s.zx,                               // Plane 
-            this.update_gen_button.bind(this),  // Callback
-            [-1, 1, 1]);                       // Symmetry (x is flipped)
+            this.generate.bind(this),           // Callback
+            [-1, 1, 1]);                        // Symmetry (x is flipped)
         s.drawer.flatten_along("y");
         s.drawer.enabled = true;
         s.disable_controls();
     }
 
     generate(){
+        document.getElementById("txt").innerText = "Générant...";
 
         // Extrude each plane
         const prf = this.scene.sceneGraph.getObjectByName("YZ").drawing;
@@ -163,9 +167,13 @@ class proc_MakeBody{
         this.scene.ship_elements.push(inter);
 
         this.scene.sceneGraph.add(inter);
+
+        this.on_return();
     }
 
     on_return(){
+        document.getElementById("txt").innerText = "";
+
         this.scene.yz.visible = false;
         this.scene.zx.visible = false;
         this.scene.drawer.view = "";
@@ -175,6 +183,9 @@ class proc_MakeBody{
         this.scene.perspective_camera();
         this.scene.change_perspective(Vector3(1, 1.5, 3), Vector3(0, 0, 0,))
         console.log("We've called on_return from MakeBody");
+
+        // this.scene. sceneGraph.rotation.y = -Math.PI/2;
+        this.after();
     }
 }
 
@@ -207,45 +218,79 @@ class proc_MakeExtrusion{
 }
 
 class proc_MakeDetail{
+    constructor(scene, after){
+        var target_pos = new THREE.Vector3();
+        var target_normal = new THREE.Vector3();
 
+        var mesh_clone = scene.body.clone();
+        mesh_clone.geometry = new THREE.BufferGeometry().fromGeometry(scene.body.geometry)
+        var sampler = new MeshSurfaceSampler(mesh_clone);
+        sampler.setWeightAttribute('random');
+        sampler.build();
+
+
+        // Add scifi details
+        var scale = 0.075;
+        var g = null;
+        var details = new THREE.Object3D();
+        for(var i = 0; i < 500; i++){
+            sampler.sample(target_pos, target_normal);
+            g = primitive.Cube(target_pos, 1);
+            g.scale(scale*Math.random(), scale*Math.random(), scale/8);
+            var m = new THREE.Mesh(g, scene.materials.METAL);
+            m.lookAt(target_normal.multiplyScalar(-1));
+            m.position.copy(target_pos);
+            details.add(m);
+        }
+        scene.body.add(details);
+
+        // Add lights
+        var lights = new THREE.Object3D();
+        for(var i = 0; i < 0; i++){
+            sampler.sample(target_pos, target_normal);
+            var col = Math.random() < 0.1 ? 0xee1111 : 0x11ee11;
+            g = new THREE.PointLight(col, 1, 0.5, 10);
+            g.castShadow = false;
+            g.add(new THREE.Mesh(primitive.Sphere(new THREE.Vector3(0, 0, 0), 0.004), new MaterialRGB(col)))
+            g.position.copy(target_pos);
+            g.position.addScaledVector(target_normal, scale);
+            g.children[0].position.addScaledVector(target_normal, -scale);
+            lights.add(g);
+        }
+        scene.body.add(lights);
+
+        after();
+    }
 }
 
 class Modeler{
     constructor(scene){
         this.scene = scene;
-        this.main_menu = null;
+
+
+        this.boids_possible = false; // If there's a shape to instance
+        this.boids = false;         // If selected boids
 
         this.div_root = document.getElementById("AffichageScene3D");
-
         this.init_UI();
+
+        this.make_body();
+
+        // For debugging. Make sure to first comment out make_body
+        //this.debug_drawings();
+        //this.pre_made_obj();
     }
 
     init_UI(){
-
-        // Main Menu
-        this.main_menu = document.createElement("div");
-        this.main_menu.className = "group-left";
-        this.main_buttons = document.createElement("div"); // Button group
-        this.main_buttons.className = "btn-group";
-
-        // Main menu buttons
-        this.btn_body = new Button("Make Main Body", this.menu_MakeBody.bind(this));
-        this.main_buttons.appendChild(this.btn_body);
-        this.btn_extr = new Button("New Extrusion", this.menu_MakeExtrusion.bind(this))
-        this.btn_extr.disabled = true;
-        this.main_buttons.appendChild(this.btn_extr);
-        this.main_buttons.appendChild(new Button("New Detail", this.menu_MakeDetail.bind(this)));
-        //this.main_buttons.appendChild(new Button("Export .obj", this.menu_Export.bind(this)));
-        this.main_menu.appendChild(this.main_buttons);
-
 
         // Top Menu
         this.top_menu = document.createElement("div");
         this.top_menu.className = "group-top";        
 
         // Pause/play animation button
-        const button_anim = new Button("Toggle animation", this.toggle_anim.bind(this));
-        button_anim.classList.add("group-top", "with-icon", "play-pause");
+        // TODO: Make this the toggle animation button
+        this.button_anim = new Button("Toggle animation", this.toggle_anim.bind(this));
+        this.button_anim.classList.add("group-top", "with-icon", "play-pause");
         const play_png  = document.createElement("img")
         play_png.id = "play";
         play_png.src= "textures/icons/play.png";
@@ -253,9 +298,20 @@ class Modeler{
         const pause_png = document.createElement("img")
         pause_png.id = "pause";
         pause_png.src= "textures/icons/pause.png";
-        button_anim.appendChild(play_png);
-        button_anim.appendChild(pause_png);
-        this.top_menu.appendChild(button_anim);
+        this.button_anim.appendChild(play_png);
+        this.button_anim.appendChild(pause_png);
+        this.top_menu.appendChild(this.button_anim);
+        this.button_anim.hidden = true;
+
+        // Boids animation button
+        // TODO: Make this the toggle animation button
+        this.button_boids = new Button("Toggle boids", this.toggle_boids.bind(this));
+        this.button_boids.classList.add("group-top", "with-icon");
+        const boid_png  = document.createElement("img")
+        boid_png.src= "textures/icons/war.png";
+        this.button_boids.appendChild(boid_png);
+        this.top_menu.appendChild(this.button_boids);
+        this.button_boids.hidden = true;
 
         // Change Visualization button
         const button_bg = new Button("Toggle BG", this.toggle_bg.bind(this));
@@ -271,42 +327,97 @@ class Modeler{
         button_bg.appendChild(bg_off_png);
         this.top_menu.appendChild(button_bg);
 
-        this.div_root.appendChild(this.main_menu);
+
         this.div_root.appendChild(this.top_menu);
 
     }
 
-    _toggle_main_menu(){
-        this.main_menu.classList.toggle("hidden");
+    pre_made_obj(){
+        var geom = new primitive.Sphere(Vector3(0, 0, 0), 1);
+        var mesh = new THREE.Mesh(geom, MaterialRGB(1, 0, 0));
+        mesh.lights = {visible: false};
+        mesh.details = {visible: false};
+        this.scene.body = mesh;
+        this.scene.sceneGraph.add(mesh);
+        this.activate_editing();
     }
 
-    // Submenu must be a class with a method on_return if do_return is to be true
-    _new_menu(submenu, do_return=false){
-        const div = document.createElement("div");
-        div.className = "group-left";
-        div.classList.add("btn-group")
-        if(do_return){
-            div.appendChild(new Button("Return", function(){
-                submenu.on_return();
-                this._return(div);
-            }.bind(this)));
+    debug_drawings(){
+        this.scene.xy.visible = true;
+        this.scene.drawer.enabled = true;
+        this.scene.drawer.period = 5;
+        this.scene.drawer.draw_on(this.scene.xy, this.__debug.bind(this));
+        this.scene.change_perspective(Vector3(0, 0, 1), Vector3(0, 0, 0));
+        this.scene.drawer.flatten_along("z");
+    }
+
+    __debug(){
+        var d = this.scene.xy.drawing;
+        console.log("hi, breakpoint here");
+
+        var max_dist = Math.max(...d.curves.map((x)=>d.currentPoint.distanceTo(x.v1)));
+        var last_dist = d.currentPoint.distanceTo(d.curves[0].v1);
+        var sense_changes = diff(d.curves.map((x)=>Math.sign(x.v1.cross(x.v2))));
+    
+        var delta_dist = max_dist - last_dist;
+        var delta_curv = sense_changes.filter((x)=>x!=0);
+
+        // new sense_changes
+        var sense_changes_2 = [];
+        var d1 = [];
+        var d2 = [];
+        var A = d.curves.map(x=>x.v1)
+        for(var i = 1; i < A.length-2; i++){
+            d1.push(A[i+1].clone().sub(A[i]));
+            d2.push(A[i-1].clone().add(A[i+1]).addScaledVector(A[i], -2))
         }
-        return div;
-    }
-
-    _return(div){
-        /*  Returns to the main menu */
-        this.on_return();
-        div.hidden = true;
-        this.div_root.removeChild(div);
-        this._toggle_main_menu();
-    }
-
-    on_return(){
-        if(this.scene.body !== null){
-            this.btn_extr.disabled = false;
+        for(var i = 0; i < d2.length; i++){
+            sense_changes_2.push(d1[i].x*d2[i].y - d1[i].y*d2[i].x);
         }
-        return;
+
+        console.log("-----------------");
+        console.log("Curvature changes: ", sense_changes);
+        //console.log("Curvature changes V2: ", sense_changes_2.map(Math.sign));
+        console.log("d_max - d_e2e: ", delta_dist);
+        //alert();
+        if(sense_changes.filter(x=>x!=0).length!=0){
+            alert("!")
+        }
+        this.debug_drawings();
+    }
+
+    make_body(){
+        new proc_MakeBody(this.scene,
+            this.make_detail.bind(this));
+    }
+    
+    make_detail(){
+        // this.toggle_bg();
+        // this.toggle_bg();
+        new proc_MakeDetail(this.scene,
+            this.activate_editing.bind(this));
+    }
+
+    activate_editing(){
+        //alert("You can now edit E X P R E S S I V E L Y");
+        this.scene.drawer.draw_on_ctrl(this.scene.body, this.parse_drawing.bind(this));
+
+        this.boids_possible = true;
+        this.button_boids.hidden = false;
+
+        this.button_anim.hidden = false;
+
+    }
+
+    parse_drawing(){
+        let drawing = this.scene.body.drawing;
+
+        // Distance between first and last point of the drawing
+        let dist_e2e = drawing.currentPoint.distanceTo(drawing.curves[0].v1);
+        console.log(dist_e2e);
+
+        // Accept the next drawing
+        this.scene.drawer.draw_on_ctrl(this.scene.body, this.parse_drawing.bind(this));
     }
 
     //////////////////////
@@ -339,18 +450,18 @@ class Modeler{
         if(this.scene.background_on){
             console.log("off")
             this.scene.materials.METAL.metalness = 0;
-            this.scene.materials.METAL.roughness = 0.5;
             this.scene.sceneGraph.background = null;
             this.scene.background_on = false;
+            this.scene.sun.visible = true;
 
             bg_on_png.hidden = false;
             bg_off_png.hidden = true;
         }else{
             console.log("on");
             this.scene.materials.METAL.metalness = 1;
-            this.scene.materials.METAL.roughness = 0.01;
             this.scene.sceneGraph.background = this.scene.textureCube;
             this.scene.background_on = true;
+            this.scene.sun.visible = false;
 
             bg_on_png.hidden = true;
             bg_off_png.hidden = false;
@@ -358,53 +469,51 @@ class Modeler{
         
     }
 
-    menu_MakeBody(){
-        this._toggle_main_menu();
+    toggle_boids(){
+        var mat1 = new THREE.MeshStandardMaterial({color: 0xdc3264, roughness: 0.7, metalness: 0.5});
+        var mat2 = new THREE.MeshStandardMaterial({color: 0x6432dc, roughness: 0.7, metalness: 0.5});
+        if(!this.boids && this.boids_possible){
+            console.log("BOIDS");
 
-        console.log("Making the body");
+            // Scene settings
+            this.toggle_bg();
+            this.boids = true;
+            this.last_camera_pos = this.scene.persp_camera.position.clone();
+            this.scene.change_perspective(Vector3(-5, 5, -5), Vector3(0, 0, 0));
+            this.scene.persp_camera.setFocalLength(50);
 
-        const body_modeler = new proc_MakeBody(this.scene);
-        const div_makeBody = this._new_menu(body_modeler, true);
-        div_makeBody.appendChild(new Button("Profile View", body_modeler.profile.bind(body_modeler)));
-        div_makeBody.appendChild(new Button("Top View", body_modeler.top.bind(body_modeler)));
-        div_makeBody.appendChild(new Button("Generate", body_modeler.generate.bind(body_modeler),
-                                           {id: "gen", disabled: true}));
-        this.div_root.appendChild(div_makeBody);
-    }
-    
-    menu_MakeExtrusion(){
-        this._toggle_main_menu();
+            // Generate boids
+            var N = 25;
+            this.scene.boids = [];
+            for(var i = 0 ;i < N; i++){
+                var mesh = this.scene.body.clone();
+                if(mesh.lights){
+                    mesh.lights.visible = false;
+                }
+                mesh.scale.multiplyScalar(10);
+                mesh.receiveShadow = true;
+                this.scene.sceneGraph.add(mesh);
 
-        const extruder = new proc_MakeExtrusion(this.scene);
-        const div_extrude = this._new_menu(extruder, true);
-        this.div_root.appendChild(div_extrude);
-    }
-
-    menu_MakeDetail(){
-        var target_pos = new THREE.Vector3();
-        var target_normal = new THREE.Vector3();
-
-        var mesh_clone = scene.body.clone();
-        mesh_clone.geometry = new THREE.BufferGeometry().fromGeometry(this.scene.body.geometry)
-        var sampler = new MeshSurfaceSampler(mesh_clone);
-        sampler.setWeightAttribute('random');
-        sampler.build();
-
-        var scale = 0.075;
-
-        for(var i = 0; i < 1000; i++){
-            sampler.sample(target_pos, target_normal);
-            var g = primitive.Cube(target_pos, 1);
-            g.scale(scale*Math.random(), scale*Math.random(), scale/5);
-            var m = new THREE.Mesh(g, this.scene.materials.METAL);
-            m.lookAt(target_normal.multiplyScalar(-1));
-            m.position.copy(target_pos);
-            this.scene.sceneGraph.add(m);
+                var b = new Boid(mesh);
+                b.team = Math.random() > 0.5 ? 0 : 1;
+                b.object.traverse(obj => obj.material = (b.team == 0) ? mat1 : mat2);
+                b.set_rotation();
+                this.scene.boids.push(b);
+            }
+            this.scene.body.visible = false;
+        }else{
+            this.toggle_bg();
+            this.boids = false;
+            this.scene.body.visible = true;
+            this.scene.persp_camera.position.copy(this.last_camera_pos);
+            this.scene.persp_camera.lookAt(Vector3(0, 0, 0));
+            this.scene.persp_camera.setFocalLength(45);
+            for(var b of this.scene.boids){
+                this.scene.sceneGraph.remove(b.object);
+                
+            }
+            this.scene.boids = [];
         }
-    }
-
-    menu_Export(){
-        
     }
 
 }
@@ -422,4 +531,8 @@ class Button{
         return button;
 
     }
+}
+
+function diff(A) {
+    return A.slice(1).map(function(n, i) { return n - A[i]; });
 }

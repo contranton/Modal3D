@@ -117,6 +117,12 @@ class DrawController {
 
         // Is in the process of drawing (i.e. mouse held down)
         this.drawing = false;
+
+        // Whether to only draw when holding ctrl
+        this.on_ctrl = false;
+
+        // Point addition period per mouse move event
+        this.period = 5;
     }
 
     __new_line(){
@@ -145,6 +151,7 @@ class DrawController {
 
         // If we had a hit
         if (intersects.length > 0) {
+            this.drawing = true;
 
             // Get the first hit object
             let intersection = intersects[0];
@@ -201,7 +208,7 @@ class DrawController {
                 line.geometry = new_geom;
             }
 
-            line.geometry.setDrawRange(0, this.i_points-1);
+            line.geometry.setDrawRange(0, this.i_points/3);
             line.geometry.computeBoundingSphere();
 
             line.finished = false; 
@@ -215,6 +222,7 @@ class DrawController {
 
         Manages geometry creation.
         */
+       this.drawing = false;
 
         let line = this.selected_obj.current_line;
         // Map line to the object (?)
@@ -267,6 +275,8 @@ class DrawController {
         drawn_shape.name = name;
         this.selected_obj.drawing = drawn_shape;
 
+        this.on_ctrl = false;
+
         // Call any callbacks
         let callback = this.callbacks[this.selected_obj];
         if(callback){callback();}
@@ -298,6 +308,11 @@ class DrawController {
         object.current_line = this.__new_line();
         object.add(object.current_line);
         
+    }
+
+    draw_on_ctrl(object, callback=null, symmetry=null){
+        this.draw_on(object, callback, symmetry);
+        this.on_ctrl = true;
     }
 
     clear_drawables(){

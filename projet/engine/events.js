@@ -11,21 +11,19 @@ In the following, 'this' is the scene instance bound during scene initialization
 function onKeyDown(event) {
     // CTRL on : picking mode
     if (event.ctrlKey) {
-        this.picker.enabled = true;
-        this.disable_controls();
+        if(this.drawer.on_ctrl){
+            this.drawer.enabled = true;
+        }
     }
 
 }
 
 function onKeyUp(event) {
     // CTRL off : stop picking
-    if (!event.ctrlKey) {
-        this.picker.enabled = false;
-        this.picker.enableDragAndDrop = false;
-        this.picker.selectedObject = null;
-        this.picker.visualRepresentation.sphereSelection.visible = false;
-        this.picker.visualRepresentation.sphereTranslation.visible = false;
-        this.enable_controls();
+    if (event.ctrlKey) {
+        if(this.drawer.on_ctrl){
+            this.drawer.enabled = false;
+        }
     }
 
 }
@@ -48,7 +46,7 @@ function onMouseDown(event) {
     }
 
     if (this.drawer.enabled === true) {
-        this.disable_controls();
+        //this.disable_controls();
         //this.drawer.draw_point(x, y, true, false);
         this.drawer.drawing = true;
     }
@@ -59,6 +57,7 @@ function onMouseUp(event) {
     this.picker.enableDragAndDrop = false;
 
     if(this.drawer.enabled){
+        this.drawer.enabled = false;
         this.enable_controls();
         this.drawer.drawing = false;
         this.drawer.finish_drawing(this.drawer.view);
@@ -81,8 +80,9 @@ function onMouseMove(event) {
 
     // Drawing
     if (this.drawer.drawing && tick==0) {
+        this.disable_controls();
         this.drawer.draw_point(x, y, false, true);
     }
-    tick = (tick+1) % 5;
+    tick = (tick+1) % this.drawer.period;
 
 }
