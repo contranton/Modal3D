@@ -7,8 +7,8 @@ var Boid = function(object) {
 	this.team = 0;
 
 	var vector = new THREE.Vector3(),
-	_acceleration, _width = 500, _height = 500, _depth = 500, _goal, _neighborhoodRadius = 60,
-	_maxSpeed = 6, _maxSteerForce = 0.01, _avoidWalls = false;
+	_acceleration, _width = 250, _height = 250, _depth = 250, _goal, _neighborhoodRadius = 100,
+	_maxSpeed = 3, _maxSteerForce = 0.00001, _avoidWalls = false;
 
 	this.position = new THREE.Vector3();
 	this.velocity = new THREE.Vector3();
@@ -75,7 +75,7 @@ var Boid = function(object) {
 		}
 		*/
 
-		if ( Math.random() > 0.5 ) {
+		if (_goal || Math.random() > 0.5 ) {
 			this.flock( boids );
 		}
 		this.move();
@@ -83,10 +83,11 @@ var Boid = function(object) {
 
 	this.flock = function ( boids ) {
 		if ( _goal ) {
-			_acceleration.add( this.reach( _goal, 0.005 ) );
+			_acceleration.add( this.reach( _goal, 0.01 ) );
+			return;
 		}
 
-		_acceleration.add( this.attack ( boids ) );
+		//_acceleration.add( this.attack ( boids ) );
 		_acceleration.add( this.alignment( boids ) );
 		_acceleration.add( this.cohesion( boids ) );
 		_acceleration.add( this.separation( boids ) );
@@ -139,6 +140,9 @@ var Boid = function(object) {
 		var steer = new THREE.Vector3();
 		steer.subVectors( target, this.position );
 		steer.multiplyScalar( amount );
+		var l = steer.length();
+		var k = 400;
+		if(l > k*_maxSteerForce) steer.divideScalar( l / (k*_maxSteerForce));
 		return steer;
 	}
 

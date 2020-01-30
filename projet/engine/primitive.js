@@ -91,7 +91,7 @@ const primitive = (function() {
         // p: centre [Vector3]
         // r: rayon
         Sphere: function(p,r) {
-            const geometry = new THREE.SphereGeometry(r,32,32);
+            const geometry = new THREE.SphereGeometry(r,8,8);
             geometry.translate(p.x,p.y,p.z);
 
             return geometry;

@@ -85,7 +85,11 @@ h1 {
 	display:none;
 }
 
-.group-top .hidden{
+:disabled{
+	display: none;
+}
+
+.group-top:disabled{
 	display:none;
 }
 

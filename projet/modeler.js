@@ -42,7 +42,7 @@ class proc_MakeBody{
 
         s.yz.visible = true;
         s.zx.visible = false;
-
+        
         s.drawer.draw_on(s.yz, this.top.bind(this));
         s.drawer.flatten_along("x");
         s.drawer.enabled = true;
@@ -62,6 +62,15 @@ class proc_MakeBody{
         s.yz.visible = false;
         s.zx.visible = true;
 
+        // Show symmetry line
+        var geom = new THREE.Geometry();
+        geom.vertices.push(new THREE.Vector3(0, 0, -3), new THREE.Vector3(0, 0, 3));
+        this.line = new THREE.Line(geom,
+            new THREE.LineDashedMaterial({color: 0x000000, dashSize: 1, gapSize: 0.1})
+        )
+
+        s.sceneGraph.add(this.line);
+
         s.drawer.draw_on(
             s.zx,                               // Plane 
             this.generate.bind(this),           // Callback
@@ -73,6 +82,8 @@ class proc_MakeBody{
 
     generate(){
         document.getElementById("txt").innerText = "Générant...";
+
+        this.scene.sceneGraph.remove(this.line);
 
         // Extrude each plane
         const prf = this.scene.sceneGraph.getObjectByName("YZ").drawing;
@@ -163,6 +174,9 @@ class proc_MakeBody{
         inter.name = "Body";
         inter.position.multiplyScalar(0);
 
+        inter.geometry.normalize();
+        //inter.geometry.scale(1, 1, 1);
+
         this.scene.body = inter;
         this.scene.ship_elements.push(inter);
 
@@ -218,48 +232,63 @@ class proc_MakeExtrusion{
 }
 
 class proc_MakeDetail{
-    constructor(scene, after){
-        var target_pos = new THREE.Vector3();
-        var target_normal = new THREE.Vector3();
 
-        var mesh_clone = scene.body.clone();
-        mesh_clone.geometry = new THREE.BufferGeometry().fromGeometry(scene.body.geometry)
-        var sampler = new MeshSurfaceSampler(mesh_clone);
-        sampler.setWeightAttribute('random');
-        sampler.build();
-
-
-        // Add scifi details
-        var scale = 0.075;
+    add_details(object){
         var g = null;
         var details = new THREE.Object3D();
         for(var i = 0; i < 500; i++){
-            sampler.sample(target_pos, target_normal);
-            g = primitive.Cube(target_pos, 1);
-            g.scale(scale*Math.random(), scale*Math.random(), scale/8);
+            this.sampler.sample(this.target_pos, this.target_normal);
+            g = primitive.Cube(this.target_pos, 1);
+            g.scale(this.scale*Math.random(), this.scale*Math.random(), this.scale/8);
             var m = new THREE.Mesh(g, scene.materials.METAL);
-            m.lookAt(target_normal.multiplyScalar(-1));
-            m.position.copy(target_pos);
+            m.lookAt(this.target_normal.multiplyScalar(-1));
+            m.position.copy(this.target_pos);
             details.add(m);
         }
-        scene.body.add(details);
+        details.name = "details";
+        object.add(details);
+    }
 
-        // Add lights
+    add_lights(object, size_mult=1){
         var lights = new THREE.Object3D();
-        for(var i = 0; i < 0; i++){
-            sampler.sample(target_pos, target_normal);
-            var col = Math.random() < 0.1 ? 0xee1111 : 0x11ee11;
-            g = new THREE.PointLight(col, 1, 0.5, 10);
+        var g = null;
+        for(var i = 0; i < 10; i++){
+            this.sampler.sample(this.target_pos, this.target_normal);
+            var col = Math.random() < 0.5 ? 0xee1111 : 0xeeee11; //#ee1111 #eeee11
+            g = new THREE.PointLight(col, 0.8, 0.5*size_mult, 0.5);
             g.castShadow = false;
-            g.add(new THREE.Mesh(primitive.Sphere(new THREE.Vector3(0, 0, 0), 0.004), new MaterialRGB(col)))
-            g.position.copy(target_pos);
-            g.position.addScaledVector(target_normal, scale);
-            g.children[0].position.addScaledVector(target_normal, -scale);
+            var rad = 0.003
+            g.add(new THREE.Mesh(primitive.Sphere(new THREE.Vector3(0, 0, 0), rad), new MaterialRGB(col)))
+            g.position.copy(this.target_pos);
+            g.position.addScaledVector(this.target_normal, this.scale);
+            g.children[0].position.addScaledVector(this.target_normal, -this.scale + rad*2);
             lights.add(g);
         }
-        scene.body.add(lights);
+        lights.name = "lights";
+        object.add(lights);
+    }
 
-        after();
+    constructor(scene, after, run=true){
+        this.target_pos = new THREE.Vector3();
+        this.target_normal = new THREE.Vector3();
+
+        this.scale = 0.075;
+
+        var mesh_clone = scene.body.clone();
+        mesh_clone.geometry = new THREE.BufferGeometry().fromGeometry(scene.body.geometry)
+        this.sampler = new MeshSurfaceSampler(mesh_clone);
+        this.sampler.setWeightAttribute('random');
+        this.sampler.build();
+
+        if(run){
+            // Add scifi details
+            this.add_details(scene.body);
+
+            // Add lights
+            this.add_lights(scene.body);
+
+            after();
+        }
     }
 }
 
@@ -274,11 +303,13 @@ class Modeler{
         this.div_root = document.getElementById("AffichageScene3D");
         this.init_UI();
 
-        this.make_body();
+        // this.debug_drawings();
+        // return;
+        
+        var DEBUG = false;
+        if(DEBUG) this.pre_made_obj()
+        else this.make_body();
 
-        // For debugging. Make sure to first comment out make_body
-        //this.debug_drawings();
-        //this.pre_made_obj();
     }
 
     init_UI(){
@@ -311,7 +342,7 @@ class Modeler{
         boid_png.src= "textures/icons/war.png";
         this.button_boids.appendChild(boid_png);
         this.top_menu.appendChild(this.button_boids);
-        this.button_boids.hidden = true;
+        this.button_boids.disabled = true;
 
         // Change Visualization button
         const button_bg = new Button("Toggle BG", this.toggle_bg.bind(this));
@@ -333,7 +364,8 @@ class Modeler{
     }
 
     pre_made_obj(){
-        var geom = new primitive.Sphere(Vector3(0, 0, 0), 1);
+        document.getElementById("txt").hidden = true;
+        var geom = new primitive.Cone(Vector3(0, 0, 0), Vector3(0, 0, 1), 0.2);
         var mesh = new THREE.Mesh(geom, MaterialRGB(1, 0, 0));
         mesh.lights = {visible: false};
         mesh.details = {visible: false};
@@ -343,9 +375,11 @@ class Modeler{
     }
 
     debug_drawings(){
+        document.getElementById("txt").hidden = true;
+
         this.scene.xy.visible = true;
         this.scene.drawer.enabled = true;
-        this.scene.drawer.period = 5;
+        this.scene.drawer.period = 3;
         this.scene.drawer.draw_on(this.scene.xy, this.__debug.bind(this));
         this.scene.change_perspective(Vector3(0, 0, 1), Vector3(0, 0, 0));
         this.scene.drawer.flatten_along("z");
@@ -353,36 +387,57 @@ class Modeler{
 
     __debug(){
         var d = this.scene.xy.drawing;
-        console.log("hi, breakpoint here");
+
+        var new_sign = x=>x>=0;
 
         var max_dist = Math.max(...d.curves.map((x)=>d.currentPoint.distanceTo(x.v1)));
         var last_dist = d.currentPoint.distanceTo(d.curves[0].v1);
-        var sense_changes = diff(d.curves.map((x)=>Math.sign(x.v1.cross(x.v2))));
+
+        // Old code for debugging curve recognition
+        /* var _cross = d.curves.map(x=>x.v1.cross(x.v2));
+        var _cross2 = d.curves.map(x=>x.v1)          .map((x,i,s)=>(i<s.length-1)?(x.cross(s[i+1])):0)
+        var sense_changes = diff(_cross.map(new_sign));
+        var sense_changes2 = diff(_cross2.map(new_sign));
+        console.log("-----------------");
+        console.log({
+            "Curvature changes: ": sense_changes.filter(x=>x),
+            //console.log("Curvature changes V2: ", sense_changes_2.map(Math.sign));
+            "d_max - d_e2e: ": delta_dist,
+            "_cross: ": _cross,
+            "_cross2: ": _cross2,
+            "_cross3: ": _cross3,
+            "sense changes": sense_changes
+        });
+        console.log("v2 x v1:\t\t\t\t", sense_changes .filter(x=>x).length);
+        console.log("v_(i+1) x v_i:\t\t\t ", sense_changes2.filter(x=>x).length);*/
+        
+        // THe third version has won! Cross product between successive difference vectors
+        // [v2_(i+1) - v1_(i+1)] x [v2_(i) - v1_(i)]
+        var _cross3 = d.curves
+        .map(x=>x.v2.sub(x.v1))
+        .map((x,i,s)=>(i<s.length-1)?(x.cross(s[i+1])):0)
+        .filter((x,i,s)=>i > 2 && i < s.length-2)
+        var sense_changes3 = diff(_cross3.map(new_sign));
+        console.log("(v2-v1)_(i+1) x (v2-v1)_i):\t", _cross3);
     
         var delta_dist = max_dist - last_dist;
-        var delta_curv = sense_changes.filter((x)=>x!=0);
+        var delta_curv = sense_changes3.filter((x)=>x);
 
-        // new sense_changes
-        var sense_changes_2 = [];
-        var d1 = [];
-        var d2 = [];
-        var A = d.curves.map(x=>x.v1)
-        for(var i = 1; i < A.length-2; i++){
-            d1.push(A[i+1].clone().sub(A[i]));
-            d2.push(A[i-1].clone().add(A[i+1]).addScaledVector(A[i], -2))
-        }
-        for(var i = 0; i < d2.length; i++){
-            sense_changes_2.push(d1[i].x*d2[i].y - d1[i].y*d2[i].x);
+        console.log(delta_curv, delta_dist)
+        switch(delta_curv.length){
+            case 0: // Single-orientation curve
+                switch(delta_dist > 0){
+                    case true: // Looped curve
+                        console.log("Loop"); break;
+                    case false: // Open/straight curve
+                        console.log("Open"); break;
+                }
+                break;
+            case 1: // Once turned-around curve
+                console.log("Propeller"); break;
         }
 
-        console.log("-----------------");
-        console.log("Curvature changes: ", sense_changes);
-        //console.log("Curvature changes V2: ", sense_changes_2.map(Math.sign));
-        console.log("d_max - d_e2e: ", delta_dist);
-        //alert();
-        if(sense_changes.filter(x=>x!=0).length!=0){
-            alert("!")
-        }
+
         this.debug_drawings();
     }
 
@@ -403,7 +458,7 @@ class Modeler{
         this.scene.drawer.draw_on_ctrl(this.scene.body, this.parse_drawing.bind(this));
 
         this.boids_possible = true;
-        this.button_boids.hidden = false;
+        this.button_boids.disabled = false;
 
         this.button_anim.hidden = false;
 
@@ -449,19 +504,19 @@ class Modeler{
 
         if(this.scene.background_on){
             console.log("off")
-            this.scene.materials.METAL.metalness = 0;
+            //this.scene.materials.METAL.metalness = 0;
             this.scene.sceneGraph.background = null;
             this.scene.background_on = false;
-            this.scene.sun.visible = true;
+            this.scene.sun.intensity = 2;
 
             bg_on_png.hidden = false;
             bg_off_png.hidden = true;
         }else{
             console.log("on");
-            this.scene.materials.METAL.metalness = 1;
+            //this.scene.materials.METAL.metalness = 1;
             this.scene.sceneGraph.background = this.scene.textureCube;
             this.scene.background_on = true;
-            this.scene.sun.visible = false;
+            this.scene.sun.intensity = 0.5;
 
             bg_on_png.hidden = true;
             bg_off_png.hidden = false;
@@ -470,36 +525,74 @@ class Modeler{
     }
 
     toggle_boids(){
-        var mat1 = new THREE.MeshStandardMaterial({color: 0xdc3264, roughness: 0.7, metalness: 0.5});
-        var mat2 = new THREE.MeshStandardMaterial({color: 0x6432dc, roughness: 0.7, metalness: 0.5});
+        // #427288 #c48f8b
+        var mat1 = new THREE.MeshStandardMaterial({color: 0x427288, roughness: 0.7, metalness: 0.5});
+        var mat2 = new THREE.MeshStandardMaterial({color: 0xa35650, roughness: 0.7, metalness: 0.5});
         if(!this.boids && this.boids_possible){
             console.log("BOIDS");
 
             // Scene settings
-            this.toggle_bg();
+            if(!this.scene.background_on){
+                this.toggle_bg();
+            }
             this.boids = true;
             this.last_camera_pos = this.scene.persp_camera.position.clone();
             this.scene.change_perspective(Vector3(-5, 5, -5), Vector3(0, 0, 0));
-            this.scene.persp_camera.setFocalLength(50);
+            this.scene.persp_camera.setFocalLength(20);
 
             // Generate boids
-            var N = 25;
+            var N = 10;
             this.scene.boids = [];
             for(var i = 0 ;i < N; i++){
                 var mesh = this.scene.body.clone();
-                if(mesh.lights){
-                    mesh.lights.visible = false;
+
+                // Remake lights from 0 to ensure they light up
+                // For some reason they don't show up in the animation otherwise
+                var lights = mesh.getObjectByName("lights");
+                mesh.remove(lights);
+                if(i == 0){
+                    var tmp = new proc_MakeDetail(this.scene, null, false);
+                    tmp.add_lights(mesh, 10);
                 }
+
+                // Scale and add to scene
                 mesh.scale.multiplyScalar(10);
-                mesh.receiveShadow = true;
+                //mesh.receiveShadow = true;
                 this.scene.sceneGraph.add(mesh);
 
+                // Add to new boids instance
                 var b = new Boid(mesh);
                 b.team = Math.random() > 0.5 ? 0 : 1;
-                b.object.traverse(obj => obj.material = (b.team == 0) ? mat1 : mat2);
+                b.object.traverse(
+                    function(obj){
+                        if(obj.type == "PointLight") return;
+                        if(obj.parent.type == "PointLight") return;
+                        obj.material = (b.team == 0) ? mat1 : mat2;
+                    });
                 b.set_rotation();
                 this.scene.boids.push(b);
             }
+
+            var enemies = {
+                0: this.scene.boids.filter(bbb => bbb.team != 0),
+                1: this.scene.boids.filter(bbb => bbb.team != 1)
+            }
+            // Assign targets
+            for(var [i, boid] of this.scene.boids.entries()){
+                if(i == 0){
+                    var enb = enemies[boid.team];
+                    if(enb.length > 0){
+                        boid.target = enb[Math.floor(Math.random() * enb.length)];
+                        boid.setGoal(boid.target.position.clone().addScaledVector(boid.target.velocity, -2));
+                    }else{
+                        boid.target = null;
+                    }
+                }else{
+                    boid.target = null;
+                }
+            }
+
+            // Hide the main body that's sitting at the origin
             this.scene.body.visible = false;
         }else{
             this.toggle_bg();

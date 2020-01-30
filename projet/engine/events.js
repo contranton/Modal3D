@@ -48,7 +48,7 @@ function onMouseDown(event) {
     if (this.drawer.enabled === true) {
         //this.disable_controls();
         //this.drawer.draw_point(x, y, true, false);
-        this.drawer.drawing = true;
+        this.drawer.clicked = true;
     }
 
 }
@@ -57,10 +57,13 @@ function onMouseUp(event) {
     this.picker.enableDragAndDrop = false;
 
     if(this.drawer.enabled){
-        this.drawer.enabled = false;
+        //this.drawer.enabled = false;
         this.enable_controls();
-        this.drawer.drawing = false;
-        this.drawer.finish_drawing(this.drawer.view);
+        this.drawer.clicked = false;
+        if(this.drawer.drawing){
+            this.drawer.drawing = false;
+            this.drawer.finish_drawing(this.drawer.view);
+        }
     }
 }
 
@@ -79,8 +82,12 @@ function onMouseMove(event) {
     }
 
     // Drawing
-    if (this.drawer.drawing && tick==0) {
+    if(this.drawer.clicked){
+        this.drawer.drawing = true;
         this.disable_controls();
+        this.drawer.clicked = false;
+    }
+    if (this.drawer.drawing && tick ==0){
         this.drawer.draw_point(x, y, false, true);
     }
     tick = (tick+1) % this.drawer.period;

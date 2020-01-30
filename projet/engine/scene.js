@@ -1,5 +1,7 @@
 "use strict";
 
+var g_time = 0;
+
 class Scene {
 
     constructor() {
@@ -12,8 +14,9 @@ class Scene {
         this.ship_elements = [];
 
         // Boid instances for animation (created by Modeler.js)
-        this.boids = []
+        this.boids = [];
         this.boid_centroid = Vector3();
+        this.lasers = [];
 
         // Reference Planes
 
@@ -71,6 +74,9 @@ class Scene {
         document.addEventListener('mousedown', onMouseDown.bind(this));
         document.addEventListener('mouseup', onMouseUp.bind(this));
         document.addEventListener('mousemove', onMouseMove.bind(this));
+        document.addEventListener('pointerdown', onMouseDown.bind(this));
+        document.addEventListener('pointerup', onMouseUp.bind(this));
+        document.addEventListener('pointermove', onMouseMove.bind(this));
 
         // Make false to stop animating (useful for lowering load when debugging menus)
         this.do_animate = true;
@@ -106,19 +112,21 @@ class Scene {
 
 
         // Lights
-        sceneInit.insertAmbientLight(this.sceneGraph, 0.4);
-        var sun1 = new THREE.SpotLight(0xffffff, 1);
-        sun1.position.set(500, 0, 0);
-        sun1.lookAt(0, 0, 0);
-        this.sceneGraph.add(sun1);
+        sceneInit.insertAmbientLight(this.sceneGraph, 0.8);
 
-        var earth = new THREE.SpotLight(0x4499ee, 0.3);
-        sun1.position.set(0, 0, 500);
-        sun1.lookAt(0, 0, 0);
+        this.sun = new THREE.DirectionalLight(0xffffff, 2);
+        this.sun.position.set(100, 50, 0);
+        this.sun.lookAt(0, 0, 0);
+        this.sceneGraph.add(this.sun);
+
+        var earth = new THREE.SpotLight(0x4499bb, 2);
+        earth.position.set(0, 0, 1000);
+        earth.lookAt(0, 0, 0);
         this.sceneGraph.add(earth);
 
-        this.sun = new THREE.DirectionalLight(0xdedede, 0.3); // 0.7
-        this.sceneGraph.add(this.sun);
+        //this.sun = new THREE.DirectionalLight(0xdedede, 0.3); // 0.7
+
+        //this.sceneGraph.add(this.sun);
         // sceneInit.insertSpotLight(this.sceneGraph, Vector3(4, 8, 4));
         // sceneInit.insertPointLight(this.sceneGraph, Vector3(0, -4, 0), 0xffffff, 0.9);
         // //sceneInit.insertLight(this.sceneGraph, Vector3(3, 2, -2));
@@ -225,19 +233,95 @@ class Scene {
 
     animate(time) {
         const t = time / 1000;//time in second
+
+        // Animate boids
         for(var b of this.boids){
+            // Update boids
             b.run(this.boids);
             this.get_boids_centroids();
-            var bb = this.boids[0]
-            this.change_perspective(Vector3(-1, 0.5, -2).applyMatrix4(bb.object.matrix),
-                                    Vector3(0, 0, 1).applyMatrix4(bb.object.matrix)
-                                    .addScaledVector(bb.velocity, 0.1)
-                                    .addScaledVector(this.boid_centroid, 0.01));
 
-            if(Math.random() < 0.02){
-                // Shoot lasers!
+            // Follow one of them
+            var bb = this.boids[0];
+
+            // Change Camera
+            if(bb.target){
+                var r = bb.target.position.clone().sub(bb.position);
+
+
+                // Targeting Perspective
+                this.change_perspective( 
+                    // 
+                    bb.position.clone()
+                    .sub(
+                        r
+                        .normalize()
+                        .multiplyScalar(10))
+                    .addScaledVector(
+                        Vector3(-8, 2, -10),
+                        1
+                    ),
+
+                    bb.target.position.clone()
+                    .addScaledVector(bb.target.velocity,4));
+            }
+            else{
+                // Default Perspective
+                this.change_perspective(
+                    Vector3(-1, 0.5, -2)
+                    .applyMatrix4(bb.object.matrix),
+
+                    Vector3(0, 0, 1)
+                    .applyMatrix4(bb.object.matrix)
+                    .addScaledVector(bb.velocity, 0.1)
+                    .addScaledVector(this.boid_centroid, 0.01));
+            }
+            // Spawn new laser shot if pointing towards target
+            if(bb.target && Math.random() < 0.05){
+                var r = bb.target.position.clone().sub(bb.position).normalize();
+                if(r.angleTo(bb.velocity.clone().normalize()) < 0.5){
+                    console.log("shooty");
+                    var g = new THREE.Geometry();
+                    g.vertices.push(Vector3(0, 0, 0), Vector3(0, 0, 0.1));
+                    var L = new THREE.Line(g, new THREE.LineBasicMaterial({color: 0xff0000}));
+                    L.applyMatrix(bb.object.matrix);
+                    L.life = 0;
+                    L.dead = false;
+    
+                    //L.direction = r;
+                    L.direction = bb.velocity.clone();
+                    L.lookAt(r);
+    
+                    this.lasers.push(L);
+                    this.sceneGraph.add(L);
+                }
             }
         }
+
+        // Animate lasers
+        for(L of this.lasers){
+            L.position.addScaledVector(L.direction, 10);
+            L.geometry.vertices[1].z *=  1.1;
+            L.geometry.verticesNeedUpdate = true;
+            if(L.life++ > 50){
+                this.sceneGraph.remove(L);
+                L.dead = true;
+            }
+        }
+        this.lasers = this.lasers.filter(L=>!L.dead);
+
+        // Blink lights on the main boid
+        if(this.boids.length > 0){
+            if((g_time++ % 100 == 0) || (g_time % 97 == 0)){
+                this.boids[0].object.traverse(
+                    function(obj){
+                        if(obj.type == "PointLight"){
+                            obj.visible = !obj.visible;
+                        }
+                    }
+                )
+            }
+        }
+
         this.render();
     }
 

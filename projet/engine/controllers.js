@@ -243,37 +243,40 @@ class DrawController {
         // Flatten 3D drawing to 2D planes
         let points = foldm(line.geometry.attributes.position.array.slice(0, this.i_points), 3);
 
-         // Manage symmetry
-        if(this.symmetry !== null){
-            var s = this.symmetry;
-
-            // Traverse points from the most recently added backwards
-            for(var i = points.length - 1; i >= 0 ; i--){
-                var p = points[i];
-                // Flip them according to the symmetry vector
-                var pp = new Float32Array([s[0]*p[0], s[1]*p[1], s[2]*p[2]]);
-                points.push(pp);
-            }
+        if(points.length > 0){
+            // Manage symmetry
+           if(this.symmetry !== null){
+               var s = this.symmetry;
+    
+               // Traverse points from the most recently added backwards
+               for(var i = points.length - 1; i >= 0 ; i--){
+                   var p = points[i];
+                   // Flip them according to the symmetry vector
+                   var pp = new Float32Array([s[0]*p[0], s[1]*p[1], s[2]*p[2]]);
+                   points.push(pp);
+               }
+           }
+    
+           switch(this.flat_coord){
+               case "x":
+                   points = points.map(x => new THREE.Vector2(x[1], x[2])).slice(0, this.i_points);
+                   break;
+               case "y":
+                   points = points.map(x => new THREE.Vector2(x[0], x[2])).slice(0, this.i_points);
+                   break;
+               case "z":
+                   points = points.map(x => new THREE.Vector2(x[0], x[1])).slice(0, this.i_points);
+                   break;
+               // Deal with arbitrary geometry here. Project onto the minimum base plane?
+           }
+    
+           // Assign drawing to object
+           const drawn_shape = new THREE.Shape(points);
+           drawn_shape.autoClose = true;
+           drawn_shape.name = name;
+           this.selected_obj.drawing = drawn_shape;
         }
 
-        switch(this.flat_coord){
-            case "x":
-                points = points.map(x => new THREE.Vector2(x[1], x[2])).slice(0, this.i_points);
-                break;
-            case "y":
-                points = points.map(x => new THREE.Vector2(x[0], x[2])).slice(0, this.i_points);
-                break;
-            case "z":
-                points = points.map(x => new THREE.Vector2(x[0], x[1])).slice(0, this.i_points);
-                break;
-            // Deal with arbitrary geometry here. Project onto the minimum base plane?
-        }
-
-        // Assign drawing to object
-        const drawn_shape = new THREE.Shape(points);
-        drawn_shape.autoClose = true;
-        drawn_shape.name = name;
-        this.selected_obj.drawing = drawn_shape;
 
         this.on_ctrl = false;
 
