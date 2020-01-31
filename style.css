@@ -1,0 +1,99 @@
+
+body { 
+	margin: 0px;
+	touch-action: none;
+	user-select: none;
+}
+
+h1 {
+	position: absolute;
+	top: 25%;
+	text-align: center;
+	margin: 0 20%;
+	font-family: "Century Gothic";
+	font-style: oblique;
+	color: white;
+	filter: drop-shadow(2px 2px 3px black);
+	user-select: none;
+}
+
+.group-left{
+	position: absolute;
+	top: 220px;
+	left: 10px;
+	align-content: center;
+	display:flex;
+	flex-direction: column;
+}
+
+.group-left button{
+	padding: 20px 24px;
+	margin: 20px auto;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-size: large;
+	font-weight: bold;
+}
+
+.btn-group button{
+	
+	background-color: lightgrey;
+	/* border: 3px solid lightslategray; */
+	color: black;
+	border-radius: 20px;
+	cursor: pointer;
+	display: block;
+	
+}
+
+.btn-group button:hover button:enabled{
+	background-color: darkgray;
+}
+
+.btn-group button:disabled{
+	opacity: 25%;
+}
+
+.group-top{
+	display: flex;
+	justify-content: space-evenly;
+	position: absolute;
+	top: 0;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: flex-start;
+	width: 100%;
+}
+
+.group-top button{
+	position: relative;
+	max-width: 20%;
+	display: block;
+	background: none;
+	border: none;
+	font-size: 0;
+}
+
+.group-top button:hover{
+	filter: drop-shadow(2px 4px 6px black);
+}
+
+.with-icon img{
+	margin: 20px;
+}
+
+.hidden{
+	display:none;
+}
+
+:disabled{
+	display: none;
+}
+
+.group-top:disabled{
+	display:none;
+}
+
+img{
+	width: 80px;
+	height: 80px;
+}

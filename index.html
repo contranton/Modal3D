@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title> Airplanator Generator </title>
+		<link rel="stylesheet" href="style.css">
+
+		<!-- Libraries -->
+		<script src="lib/three.min.js" defer></script>
+		<script src="lib/dat.gui.min.js" defer></script>
+		<script src="lib/three-csg.js" defer></script>
+		<script src="lib/OrbitControls.js" defer></script>
+		<script src="lib/MeshSurfaceSampler.js" defer></script>
+		<script src="lib/physics_boid.js"></script>
+		<script src="lib/download.js"></script>
+		<script src="lib/three-extensions/PLYExporter.js"></script>
+
+		<!-- Graphics Engine -->
+		<script src="engine/primitive.js" defer></script>
+		<script src="engine/events.js" defer></script>
+		<script src="engine/sceneInit.js" defer></script>
+		<script src="engine/scene.js" defer></script>
+		<script src="engine/controllers.js" defer></script>
+		
+		<!-- Modeler -->
+		<script src="modeler.js" defer></script>	
+		<script src="main.js" defer></script>
+
+	</head>
+
+	<body style="overflow: hidden">
+		<!-- Main WebGL canvas -->
+		<div id="AffichageScene3D"></div>
+
+		<h1 id="txt">Dessinez le profil du corps du vaisseau</h1>
+	</body>
+
+</html>

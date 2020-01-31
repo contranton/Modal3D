@@ -1,0 +1,31 @@
+MATERIALS:
+- List of pre-made materials that are only switched to and from
+- Give primitives an id that allows changing material at once (upon getELementbyID?)
+
+MENUS:
+- Toggle background on/off
+
+DRAWING:
+- Show "view completed" status on menu buttons.
+    - Only when profile and top are good does "generate" enable
+
+MESH:
+- Vertex smoothing
+- Keep seams intact
+    - Seams are where the shape extrusinos intersect
+- Simulate soft body expansion?
+    - Force radiated from median line
+    - Getting waaaaay too complicataed
+- I'm using remeshing in the blender workflow... how to do differently or simpler?
+
+MODELING:
+- Prevent person from remaking body unless they wish to restart from scratch
+- Add the projections of the existing drawings onto the other plane (modeler:25)
+
+IMPORTANT:
+- Replace buttons by gestures
+- Variety in the animation?
+- EXPRESSIVE
+- Pense a la animation
+
+USE MORPHTARGETS
