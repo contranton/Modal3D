@@ -9,21 +9,25 @@ In the following, 'this' is the scene instance bound during scene initialization
 ////////////////
 
 function onKeyDown(event) {
-    // CTRL on : picking mode
     if (event.ctrlKey) {
-        if(this.drawer.on_ctrl){
-            this.drawer.enabled = true;
+        for(var drawer of drawers){
+            if(drawer.on_ctrl){
+                drawer.enabled = true;
+            }
         }
+            
     }
 
 }
 
 function onKeyUp(event) {
-    // CTRL off : stop picking
     if (event.ctrlKey) {
-        if(this.drawer.on_ctrl){
-            this.drawer.enabled = false;
+        for(var drawer of drawers){
+            if(drawer.on_ctrl && drawer.drawing){
+                drawer.enabled = false;
+            }
         }
+            
     }
 
 }
@@ -41,33 +45,32 @@ function onMouseDown(event) {
     const x = 2 * xPixel / this.w - 1;
     const y = -2 * yPixel / this.h + 1;
 
-    if (this.picker.enabled === true) {
-        this.picker.on_down();
-    }
-
-    if (this.drawer.enabled === true) {
-        //this.disable_controls();
-        //this.drawer.draw_point(x, y, true, false);
-        this.drawer.clicked = true;
+    for(var drawer of drawers){
+        if(drawer.enabled === true) {
+            //this.disable_controls();
+            //drawer.draw_point(x, y, true, false);
+            drawer.clicked = true;
+        }
     }
 
 }
 
 function onMouseUp(event) {
-    this.picker.enableDragAndDrop = false;
 
-    if(this.drawer.enabled){
-        //this.drawer.enabled = false;
-        this.enable_controls();
-        this.drawer.clicked = false;
-        if(this.drawer.drawing){
-            this.drawer.drawing = false;
-            this.drawer.finish_drawing(this.drawer.view);
+    for(var drawer of drawers){
+        if(drawer.enabled){
+            //drawer.enabled = false;
+            this.enable_controls();
+            drawer.clicked = false;
+            if(drawer.drawing){
+                drawer.drawing = false;
+                drawer.finish_drawing(drawer.view);
+            }
+    
         }
     }
 }
 
-var tick = 0;
 function onMouseMove(event) {
 
     const xPixel = event.clientX;
@@ -76,20 +79,17 @@ function onMouseMove(event) {
     const x = 2 * xPixel / this.w - 1;
     const y = -2 * yPixel / this.h + 1;
 
-    // Gestion du drag & drop
-    if (this.picker.enableDragAndDrop === true) {
-        this.picker.on_move(x, y);
-    }
-
     // Drawing
-    if(this.drawer.clicked){
-        this.drawer.drawing = true;
-        this.disable_controls();
-        this.drawer.clicked = false;
+    for(var drawer of drawers){
+        if(drawer.clicked){
+            drawer.drawing = true;
+            this.disable_controls();
+            drawer.clicked = false;
+        }
+        if (drawer.drawing && drawer.tick ==0){
+            drawer.draw_point(x, y, false, true);
+        }
+        drawer.tick = (drawer.tick+1) % drawer.period;
     }
-    if (this.drawer.drawing && tick ==0){
-        this.drawer.draw_point(x, y, false, true);
-    }
-    tick = (tick+1) % this.drawer.period;
 
 }

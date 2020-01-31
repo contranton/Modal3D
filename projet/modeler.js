@@ -1,6 +1,7 @@
 "use strict";
 
 var DEBUG = false;
+var _extrudes = null; // debug data
 
 /*
 Remember to always bind this when passing as a callback argument!
@@ -50,7 +51,7 @@ class proc_MakeBody{
     }
 
     top(){
-        document.getElementById("txt").innerText = "Dessinez la vue du haut";
+        document.getElementById("txt").innerText = "Dessinez la vue du haut du corps";
 
         let s = this.scene;
         s.drawer.clear_drawables();
@@ -114,10 +115,11 @@ class proc_MakeBody{
         console.log(bounding);
 
         // Normalize top to profile's dimensions
+        // Squishes top to fit profile
         for(let crv of top.curves){
             for(let v of [crv.v1, crv.v2]){
-                v.x -= top_dat.min_x;
-                v.x /= width_ratio;
+                //v.x -= top_dat.min_x;
+                //v.x /= width_ratio;
 
                 v.y -= top_dat.min_y;
                 v.y /= height_ratio;
@@ -129,12 +131,27 @@ class proc_MakeBody{
                 v.y -= prf_dat.min_y;
             }
         }
+        /* for(let crv of prf.curves){
+            for(let v of [crv.v1, crv.v2]){
+                v.x -= prf_dat.min_x;
+                v.x *= width_ratio;
+
+                //v.y -= prf_dat.min_y;
+                //v.y /= height_ratio;
+            }
+        }
+        for(let crv of top.curves){
+            for(let v of [crv.v1, crv.v2]){
+                v.x -= top_dat.min_x;
+                v.y -= top_dat.min_y;
+            }
+        } */
 
         
         var depth = 2;
         var opts = {
             steps: 2,
-            depth: depth,
+            depth: 2*depth,
             bevelEnabled: false
         };
 
@@ -151,17 +168,14 @@ class proc_MakeBody{
         //top_obj.translateX(-prf_dat.min_x);
         prf_obj.rotateX(Math.PI/2);
         prf_obj.translateX(-depth/2);
-        top_obj.translateY(depth/2);
-        // prf_wire.translateX(-depth/2);
-        // top_wire.translateY(depth/2);
-
         prf_obj.rotateY(Math.PI/2);
-        //prf_obj.rotateX(Math.PI/2);
+        
+        top_obj.translateY(depth/2);
         top_obj.rotateX(Math.PI/2);
-        // prf_wire.rotateY(Math.PI/2);
-        // top_wire.rotateX(Math.PI/2);
 
-        if(DEBUG){
+        _extrudes = [prf_obj, top_obj];
+
+        if(false){
             this.scene.sceneGraph.add(prf_obj);
             this.scene.sceneGraph.add(top_obj);     
         }
@@ -300,6 +314,8 @@ class Modeler{
         this.boids_possible = false; // If there's a shape to instance
         this.boids = false;         // If selected boids
 
+        this.wings_done = false;
+
         this.div_root = document.getElementById("AffichageScene3D");
         this.init_UI();
 
@@ -357,6 +373,15 @@ class Modeler{
         button_bg.appendChild(bg_on_png);
         button_bg.appendChild(bg_off_png);
         this.top_menu.appendChild(button_bg);
+
+        // Download button
+        this.download = new Button("Download", this.download.bind(this));
+        this.download.classList.add("group-top", "with-icon");
+        const dl_png  = document.createElement("img")
+        dl_png.src= "textures/icons/save.png";
+        this.download.appendChild(dl_png);
+        this.top_menu.appendChild(this.download);
+        this.download.disabled = true;
 
 
         this.div_root.appendChild(this.top_menu);
@@ -455,24 +480,57 @@ class Modeler{
 
     activate_editing(){
         //alert("You can now edit E X P R E S S I V E L Y");
-        this.scene.drawer.draw_on_ctrl(this.scene.body, this.parse_drawing.bind(this));
+        this.scene.drawer.draw_on(this.scene.body, this.parse_drawing.bind(this));
+        this.scene.drawer.on_ctrl = true;
+        this.scene.drawer.flatten_along("x");
 
         this.boids_possible = true;
         this.button_boids.disabled = false;
+
+        this.download.disabled = false;
 
         this.button_anim.hidden = false;
 
     }
 
     parse_drawing(){
-        let drawing = this.scene.body.drawing;
+        let drawing = this.scene.drawer.generated_shape;
+
+        if(this.wings_done){ // Parse all other details
+            //loop, propeller, etc;
+        }else{
+            if(this.scene.drawer.selected_obj.name == "ZAP"){ // if drew starting from the green thing
+                console.log("WOOOO");
+            }else{ // if drawing on body itself
+                drawing.curves.push(drawing.curves[0].clone());
+                drawing.curves.push(drawing.curves[0].clone());
+        
+                //extrusion for highlighting
+                let geom = new THREE.ExtrudeGeometry(drawing, {steps:1, depth:2 , bevelEnabled:false});
+                geom.computeFaceNormals();
+                this.highlight_mesh = new THREE.Mesh(geom, MaterialRGB(0, 1, 0, 0.1));
+                this.highlight_mesh.rotateX(Math.PI/2);
+                this.highlight_mesh.translateX(-1);
+                this.highlight_mesh.rotateY(Math.PI/2);
+                var tmp = new DrawController(this.scene);
+                tmp.draw_on_if_touch(this.scene.camera_plane, this.highlight_mesh);
+                tmp.enabled = true;
+                
+                this.highlight_mesh.name == "ZAP";
+                var p = this.highlight_mesh.position;
+        
+                this.scene.body.add(this.highlight_mesh);
+            }
+        }
 
         // Distance between first and last point of the drawing
         let dist_e2e = drawing.currentPoint.distanceTo(drawing.curves[0].v1);
         console.log(dist_e2e);
 
         // Accept the next drawing
-        this.scene.drawer.draw_on_ctrl(this.scene.body, this.parse_drawing.bind(this));
+        this.scene.drawer.draw_on(this.scene.body, this.parse_drawing.bind(this));
+        this.scene.drawer.on_ctrl = true;
+        this.scene.drawer.flatten_along("x");
     }
 
     //////////////////////
@@ -524,6 +582,12 @@ class Modeler{
         
     }
 
+    download(){
+        var exporter = new PLYExporter();
+        var data = exporter.parse(this.scene.body);
+        download(data, "My_Ship.ply");
+    }
+
     toggle_boids(){
         // #427288 #c48f8b
         var mat1 = new THREE.MeshStandardMaterial({color: 0x427288, roughness: 0.7, metalness: 0.5});
@@ -538,7 +602,7 @@ class Modeler{
             this.boids = true;
             this.last_camera_pos = this.scene.persp_camera.position.clone();
             this.scene.change_perspective(Vector3(-5, 5, -5), Vector3(0, 0, 0));
-            this.scene.persp_camera.setFocalLength(20);
+            this.scene.persp_camera.setFocalLength(50);
 
             // Generate boids
             var N = 10;
@@ -583,7 +647,7 @@ class Modeler{
                     var enb = enemies[boid.team];
                     if(enb.length > 0){
                         boid.target = enb[Math.floor(Math.random() * enb.length)];
-                        boid.setGoal(boid.target.position.clone().addScaledVector(boid.target.velocity, -2));
+                        boid.setGoal(boid.target.position);//.clone().addScaledVector(boid.target.velocity, -2));
                     }else{
                         boid.target = null;
                     }

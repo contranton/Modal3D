@@ -36,7 +36,7 @@ class Scene {
         this.controls = null;
         
         // Dynamic content controllers
-        this.picker = new PickController(this);
+        //this.picker = new PickController(this);
         this.drawer = new DrawController(this);
         
         // Rendering and materials
@@ -106,6 +106,15 @@ class Scene {
 
         this.active_camera = this.persp_camera;
 
+        // Camera plane
+        var pl_geom= primitive.Quadrangle(
+            Vector3(0, 0, 0),
+            Vector3(window.innerWidth, 0, 0),
+            Vector3(window.innerWidth, window.innerHeight, 0),
+            Vector3(0, window.innerHeight, 0));
+        this.camera_plane = new THREE.Mesh(pl_geom, MaterialRGB(1, 1, 1, 0));
+        //this.camera_plane.applyMatrix(this.active_camera.matrix);
+
 
         // Fog
         // sthis.sceneGraph.fog = new THREE.Fog(new THREE.Color('white'), 1, 5);
@@ -172,7 +181,7 @@ class Scene {
         cube.name = "cube";
         cube.castShadow = true;
         //this.sceneGraph.add(cube);
-        this.picker.selectableObjects.push(cube); // Ajout du cube en tant qu'élément selectionnable
+        // this.picker.selectableObjects.push(cube); // Ajout du cube en tant qu'élément selectionnable
 
 
         // *********************** //
@@ -182,7 +191,7 @@ class Scene {
         sphereSelection.name = "sphereSelection";
         sphereSelection.visible = false;
         //this.sceneGraph.add(sphereSelection);
-        this.picker.visualRepresentation.sphereSelection = sphereSelection;
+        // this.picker.visualRepresentation.sphereSelection = sphereSelection;
 
         // *********************** //
         /// Une sphère montrant la position après translation
@@ -191,7 +200,7 @@ class Scene {
         sphereTranslation.name = "sphereTranslation";
         sphereTranslation.visible = false;
         //this.sceneGraph.add(sphereTranslation);
-        this.picker.visualRepresentation.sphereTranslation = sphereTranslation;
+        // this.picker.visualRepresentation.sphereTranslation = sphereTranslation;
 
         //const planeGeometry = primitive.Quadrangle()
 
@@ -238,8 +247,10 @@ class Scene {
         for(var b of this.boids){
             // Update boids
             b.run(this.boids);
-            this.get_boids_centroids();
+        }
+        this.get_boids_centroids();
 
+        if(this.boids.length > 0){
             // Follow one of them
             var bb = this.boids[0];
 
@@ -252,14 +263,9 @@ class Scene {
                 this.change_perspective( 
                     // 
                     bb.position.clone()
-                    .sub(
-                        r
-                        .normalize()
-                        .multiplyScalar(10))
-                    .addScaledVector(
-                        Vector3(-8, 2, -10),
-                        1
-                    ),
+                    .add(r.clone().normalize().multiplyScalar(-60))
+                    .add(Vector3(0, 8, -10))
+                    ,
 
                     bb.target.position.clone()
                     .addScaledVector(bb.target.velocity,4));
@@ -276,20 +282,21 @@ class Scene {
                     .addScaledVector(this.boid_centroid, 0.01));
             }
             // Spawn new laser shot if pointing towards target
-            if(bb.target && Math.random() < 0.05){
+            if(bb.target){
                 var r = bb.target.position.clone().sub(bb.position).normalize();
-                if(r.angleTo(bb.velocity.clone().normalize()) < 0.5){
+                if(r.angleTo(bb.velocity.clone().normalize()) < 1  && Math.random() < 0.05){
                     console.log("shooty");
                     var g = new THREE.Geometry();
-                    g.vertices.push(Vector3(0, 0, 0), Vector3(0, 0, 0.1));
+                    r.addScaledVector(bb.target.velocity, 0.01*bb.target.velocity.length()).normalize();
+                    g.vertices.push(Vector3(0, 0, 0), r.multiplyScalar(30));
                     var L = new THREE.Line(g, new THREE.LineBasicMaterial({color: 0xff0000}));
-                    L.applyMatrix(bb.object.matrix);
+                    L.position.copy(bb.object.position);
                     L.life = 0;
                     L.dead = false;
     
                     //L.direction = r;
-                    L.direction = bb.velocity.clone();
-                    L.lookAt(r);
+                    L.direction = r;
+                    //L.lookAt(r);
     
                     this.lasers.push(L);
                     this.sceneGraph.add(L);
@@ -299,7 +306,7 @@ class Scene {
 
         // Animate lasers
         for(L of this.lasers){
-            L.position.addScaledVector(L.direction, 10);
+            if(L.life != 0) L.position.addScaledVector(L.direction, 1);
             L.geometry.vertices[1].z *=  1.1;
             L.geometry.verticesNeedUpdate = true;
             if(L.life++ > 50){

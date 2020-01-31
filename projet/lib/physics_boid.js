@@ -7,7 +7,7 @@ var Boid = function(object) {
 	this.team = 0;
 
 	var vector = new THREE.Vector3(),
-	_acceleration, _width = 250, _height = 250, _depth = 250, _goal, _neighborhoodRadius = 100,
+	_acceleration, _width = 250, _height = 250, _depth = 250, _goal, _neighborhoodRadius = 50,
 	_maxSpeed = 3, _maxSteerForce = 0.00001, _avoidWalls = false;
 
 	this.position = new THREE.Vector3();
@@ -83,7 +83,7 @@ var Boid = function(object) {
 
 	this.flock = function ( boids ) {
 		if ( _goal ) {
-			_acceleration.add( this.reach( _goal, 0.01 ) );
+			_acceleration.add( this.reach( _goal, 1 ) );
 			return;
 		}
 
