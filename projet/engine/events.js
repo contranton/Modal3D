@@ -48,7 +48,7 @@ function onMouseDown(event) {
     for(var drawer of drawers){
         if(drawer.enabled === true) {
             //this.disable_controls();
-            //drawer.draw_point(x, y, true, false);
+            drawer.draw_point(x, y, true, false);
             drawer.clicked = true;
         }
     }
@@ -58,7 +58,7 @@ function onMouseDown(event) {
 function onMouseUp(event) {
 
     for(var drawer of drawers){
-        if(drawer.enabled){
+        if(drawer.enabled && drawer.ok2draw){
             //drawer.enabled = false;
             this.enable_controls();
             drawer.clicked = false;
@@ -81,12 +81,14 @@ function onMouseMove(event) {
 
     // Drawing
     for(var drawer of drawers){
-        if(drawer.clicked){
-            drawer.drawing = true;
-            this.disable_controls();
-            drawer.clicked = false;
+        if(drawer.clicked ){
+            if(drawer.ok2draw){
+                drawer.drawing = true;
+                this.disable_controls();
+                drawer.clicked = false;
+            }else this.enable_controls();
         }
-        if (drawer.drawing && drawer.tick ==0){
+        if (drawer.drawing && drawer.ok2draw && drawer.tick ==0){
             drawer.draw_point(x, y, false, true);
         }
         drawer.tick = (drawer.tick+1) % drawer.period;

@@ -108,13 +108,15 @@ class Scene {
 
         // Camera plane
         var pl_geom= primitive.Quadrangle(
-            Vector3(0, 0, 0),
-            Vector3(window.innerWidth, 0, 0),
-            Vector3(window.innerWidth, window.innerHeight, 0),
-            Vector3(0, window.innerHeight, 0));
-        this.camera_plane = new THREE.Mesh(pl_geom, MaterialRGB(1, 1, 1, 0));
-        //this.camera_plane.applyMatrix(this.active_camera.matrix);
-
+            Vector3(-w/2, -h/2, 0),
+            Vector3(w/2, -h/2, 0),
+            Vector3(w/2, h/2, 0),
+            Vector3(-w/2, h/2, 0));
+        this.camera_plane = new THREE.Mesh(pl_geom, MaterialRGB(1, 0, 1, 0.5));
+        this.camera_plane.position.copy(this.active_camera.position.clone().multiplyScalar(0.95));
+        this.camera_plane.lookAt(Vector3(0, 0, 0));
+        this.camera_plane.name = "CameraPlane";
+        this.sceneGraph.add(this.camera_plane);
 
         // Fog
         // sthis.sceneGraph.fog = new THREE.Fog(new THREE.Color('white'), 1, 5);
@@ -237,6 +239,8 @@ class Scene {
     // Rendering and animation
 
     render() {
+        this.camera_plane.position.copy(this.active_camera.position.clone().multiplyScalar(0.95));
+        this.camera_plane.lookAt(0, 0, 0);
         this.renderer.render(this.sceneGraph, this.active_camera);
     }
 

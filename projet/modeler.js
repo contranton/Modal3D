@@ -410,8 +410,8 @@ class Modeler{
         this.scene.drawer.flatten_along("z");
     }
 
-    __debug(){
-        var d = this.scene.xy.drawing;
+    analyse_drawing(drawing){
+        var d = drawing;
 
         var new_sign = x=>x>=0;
 
@@ -453,17 +453,18 @@ class Modeler{
             case 0: // Single-orientation curve
                 switch(delta_dist > 0){
                     case true: // Looped curve
-                        console.log("Loop"); break;
+                        return("Loop"); break;
                     case false: // Open/straight curve
-                        console.log("Open"); break;
+                        return("Open"); break;
                 }
                 break;
             case 1: // Once turned-around curve
-                console.log("Propeller"); break;
+                return("Propeller"); break;
         }
 
+        return("UNKNOWN");
 
-        this.debug_drawings();
+        //this.debug_drawings();
     }
 
     make_body(){
@@ -482,7 +483,7 @@ class Modeler{
         //alert("You can now edit E X P R E S S I V E L Y");
         this.scene.drawer.draw_on(this.scene.body, this.parse_drawing.bind(this));
         this.scene.drawer.on_ctrl = true;
-        this.scene.drawer.flatten_along("x");
+        if(!this.wings_done.done) this.scene.drawer.flatten_along("x");
 
         this.boids_possible = true;
         this.button_boids.disabled = false;
@@ -512,14 +513,18 @@ class Modeler{
                 this.highlight_mesh.rotateX(Math.PI/2);
                 this.highlight_mesh.translateX(-1);
                 this.highlight_mesh.rotateY(Math.PI/2);
+                this.highlight_mesh.name = "ZAP";
                 var tmp = new DrawController(this.scene);
-                tmp.draw_on_if_touch(this.scene.camera_plane, this.highlight_mesh);
+                tmp.draw_on(this.scene.camera_plane, this.create_wing.bind(this));
+                tmp.set_trigger_obj(this.highlight_mesh);
+                tmp.flatten_along(this.scene.camera_plane.position);
+                tmp.on_ctrl = true;
                 tmp.enabled = true;
                 
-                this.highlight_mesh.name == "ZAP";
                 var p = this.highlight_mesh.position;
         
                 this.scene.body.add(this.highlight_mesh);
+                return;
             }
         }
 
@@ -531,6 +536,13 @@ class Modeler{
         this.scene.drawer.draw_on(this.scene.body, this.parse_drawing.bind(this));
         this.scene.drawer.on_ctrl = true;
         this.scene.drawer.flatten_along("x");
+    }
+
+    create_wing(){
+        let drawing = this.scene.camera_plane.drawing;
+        //alert();
+        var res = this.analyse_drawing(drawing);
+        alert(res);
     }
 
     //////////////////////
