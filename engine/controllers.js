@@ -44,6 +44,16 @@ class DrawController {
         drawers.push(this);
     }
 
+    print_state(){
+
+        var code = 0;
+        var exp=0;
+        for(var x of [this.ok2draw, this.clicked, this.drawing, this.enabled, this.on_ctrl, this.trigger_obj]){
+            code += (x?1:0)*2**(exp++);
+        }
+        console.log(code.toString(2));
+    }
+
     __new_line() {
         // BufferGeometry for efficient point addition
         // Geometry gets rebuilt if maximum point number is surpassed
@@ -59,9 +69,12 @@ class DrawController {
     }
 
     draw_point(screen_x, screen_y, clicked = false, rem = false) {
-        console.log(this.id, ":draw_point");
+        // console.log(this.id, ":draw_point");
+        this.print_state();
         const raycaster = this.scene.raycaster;
         const camera = this.scene.active_camera;
+
+        document.getElementById("txt").hidden = true;
 
         // Position the raycaster at the camera position towards the chosen x, y
         raycaster.setFromCamera(new THREE.Vector2(screen_x, screen_y), camera);
@@ -78,7 +91,7 @@ class DrawController {
             if (this.trigger_obj && intersects.length > 1) {
                 second = intersects[1];
             }
-            console.log("state: ", this.id, this.ok2draw, first.object.name, second ? second.object.name : "..")
+            //console.log("state: ", this.id, this.ok2draw, first.object.name, second ? second.object.name : "..")
 
             // Draw only on the first object touched by the mouse
             // if (clicked) {
@@ -93,7 +106,7 @@ class DrawController {
                 if (this.trigger_obj != null) {
                     if (second != null) {
                         if (second.object != this.trigger_obj) {
-                            console.log("YOu have to draw over ", this.trigger_obj.name);
+                            //console.log("YOu have to draw over ", this.trigger_obj.name);
                             return;
                         } else {
                             /* All good! */
@@ -102,7 +115,7 @@ class DrawController {
                     } else return;
                 }
             }
-            console.log("SUCCESS");
+            //console.log("SUCCESS");
             this.ok2draw = true;
 
             let line = this.selected_obj.current_line;
@@ -180,7 +193,8 @@ class DrawController {
 
 
     finish_drawing(name = "drawing") {
-        console.log(this.id, ":finish_Drawing");
+        //console.log(this.id, ":finish_Drawing");
+        this.print_state();
         /* Called upon release of the mouse on the current drawing
 
         Manages geometry creation.

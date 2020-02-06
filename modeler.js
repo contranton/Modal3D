@@ -52,7 +52,12 @@ class proc_MakeBody{
 
     top(){
         document.getElementById("txt").innerText = "Dessinez la vue du haut du corps";
-
+        document.getElementById("txt").hidden = false;
+        document.getElementById("top").innerText = "Back";
+        document.getElementById("frt").innerText = "Left";
+        document.getElementById("bck").innerText = "Right";
+        document.getElementById("btm").innerText = "Front";
+        
         let s = this.scene;
         s.drawer.clear_drawables();
         s.drawer.view = "top";
@@ -481,6 +486,8 @@ class Modeler{
 
     activate_editing(){
         //alert("You can now edit E X P R E S S I V E L Y");
+        document.getElementsByClassName("container")[0].hidden = true;
+
         this.scene.drawer.draw_on(this.scene.body, this.parse_drawing.bind(this));
         this.scene.drawer.on_ctrl = true;
         if(!this.wings_done.done) this.scene.drawer.flatten_along("x");
@@ -506,7 +513,7 @@ class Modeler{
                 drawing.curves.push(drawing.curves[0].clone());
                 drawing.curves.push(drawing.curves[0].clone());
         
-                //extrusion for highlighting
+                //extrusion mesh for 'highlighting'
                 let geom = new THREE.ExtrudeGeometry(drawing, {steps:1, depth:2 , bevelEnabled:false});
                 geom.computeFaceNormals();
                 this.highlight_mesh = new THREE.Mesh(geom, MaterialRGB(0, 1, 0, 0.1));
@@ -514,14 +521,15 @@ class Modeler{
                 this.highlight_mesh.translateX(-1);
                 this.highlight_mesh.rotateY(Math.PI/2);
                 this.highlight_mesh.name = "ZAP";
+                this.highlight_mesh.drawing = drawing;
+
+                // Set up new drawer to the desired wing path
                 var tmp = new DrawController(this.scene);
                 tmp.draw_on(this.scene.camera_plane, this.create_wing.bind(this));
                 tmp.set_trigger_obj(this.highlight_mesh);
                 tmp.flatten_along(this.scene.camera_plane.position);
                 tmp.on_ctrl = true;
                 tmp.enabled = true;
-                
-                var p = this.highlight_mesh.position;
         
                 this.scene.body.add(this.highlight_mesh);
                 return;
@@ -540,9 +548,48 @@ class Modeler{
 
     create_wing(){
         let drawing = this.scene.camera_plane.drawing;
+
+        // Map density to 3D distance
+        console.log("doit");
+        var curves = drawing.curves.map(v => v.v1.clone());
+        var dists = curves.map((x,i,s)=>(i!=s.length-1)?x.distanceTo(s[i+1]):null);
+        dists = dists.map(v=>v-dists.reduce((x,y)=>x+y)/dists.length);
+
+        var camera = this.scene.active_camera.position.clone();
+        var normal = Vector3(1, 0, 0);
+
+        // Get projection plane from face normal and camera view
+        var dot = normal.dot(camera.normalize());
+        var plane = normal.multiplyScalar(dot).add(camera.multiplyScalar(1 - dot)); // a*X + (1-a)*Y
+
+        // Project curves onto new plane before adding z dimension, then unproject
+        var m = new THREE.Matrix4();
+        this.scene.active_camera.matrix.clone().getInverse(m);
+        curves = curves .map(v => Vector3(v.x, v.y, dists[1]))
+                        .map(v => v.applyMatrix4(m));
+
+
+        // Turn curves intro proper THREE objects
+        curves = curves.map((v,i) => (i > 0)?(new THREE.LineCurve3(curves[i-1], v)):undefined).slice(1);
+        var B = new THREE.CurvePath();
+        curves.map(x=>B.add(x));
+
+        // Create wing geometry
+        var g = new THREE.ExtrudeGeometry(drawing, {extrudePath: B, bevelEnabled:false})
+        var m = new THREE.Mesh(g, this.scene.materials.METAL);
+
+        this.scene.sceneGraph.add(m);
+
         //alert();
-        var res = this.analyse_drawing(drawing);
-        alert(res);
+        //var res = this.analyse_drawing(drawing);
+
+        // Place wing on center of the highlight_mesh
+        /* var m = this.highlight_mesh;
+        this.scene.raycaster.set(Vector3(3, 0, 0), Vector3(0, 0, 0));
+        var intr = this.scene.raycaster.intersectObject(m);
+        var p = intr[0].point;
+ */
+
     }
 
     //////////////////////
@@ -704,4 +751,8 @@ class Button{
 
 function diff(A) {
     return A.slice(1).map(function(n, i) { return n - A[i]; });
+}
+
+function diff_div(A) {
+    return A.slice(1).map(function(n, i) { return n / A[i]; });
 }

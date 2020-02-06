@@ -112,7 +112,7 @@ class Scene {
             Vector3(w/2, -h/2, 0),
             Vector3(w/2, h/2, 0),
             Vector3(-w/2, h/2, 0));
-        this.camera_plane = new THREE.Mesh(pl_geom, MaterialRGB(1, 0, 1, 0.5));
+        this.camera_plane = new THREE.Mesh(pl_geom, MaterialRGB(1, 0, 1, 0));
         this.camera_plane.position.copy(this.active_camera.position.clone().multiplyScalar(0.95));
         this.camera_plane.lookAt(Vector3(0, 0, 0));
         this.camera_plane.name = "CameraPlane";

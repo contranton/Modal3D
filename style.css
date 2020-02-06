@@ -9,12 +9,15 @@ h1 {
 	position: absolute;
 	top: 25%;
 	text-align: center;
-	margin: 0 20%;
 	font-family: "Century Gothic";
 	font-style: oblique;
 	color: white;
 	filter: drop-shadow(2px 2px 3px black);
 	user-select: none;
+}
+
+.container{
+	
 }
 
 .group-left{
